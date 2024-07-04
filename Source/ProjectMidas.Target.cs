@@ -8,7 +8,7 @@ public class ProjectMidasTarget : TargetRules
 	public ProjectMidasTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
-		DefaultBuildSettings = BuildSettingsVersion.V5;
+		DefaultBuildSettings = BuildSettingsVersion.V4;
 
 		ExtraModuleNames.AddRange( new string[] { "ProjectMidas" } );
 	}

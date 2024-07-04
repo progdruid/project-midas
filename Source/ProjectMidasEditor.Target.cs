@@ -8,7 +8,7 @@ public class ProjectMidasEditorTarget : TargetRules
 	public ProjectMidasEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		DefaultBuildSettings = BuildSettingsVersion.V5;
+		DefaultBuildSettings = BuildSettingsVersion.V4;
 
 		ExtraModuleNames.AddRange( new string[] { "ProjectMidas" } );
 	}

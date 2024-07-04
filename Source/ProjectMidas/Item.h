@@ -16,7 +16,7 @@ public:
 	AItem();
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item")
 	FName Name;
 
 private:
