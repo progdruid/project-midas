@@ -17,7 +17,11 @@ class PROJECTMIDAS_API AAbyssPlayerControllerBase : public APlayerController
 
 public:
 	AAbyssPlayerControllerBase();
-
+	
+private:
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int TraceDistance;
@@ -31,10 +35,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ChangeItemDrag(bool bInDrag);
 
+	
 private:
 	bool TraceForward(FHitResult& Hit, ECollisionChannel Channel) const;
 	
-private:
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
 };

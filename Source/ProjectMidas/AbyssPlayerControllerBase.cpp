@@ -8,6 +8,28 @@ AAbyssPlayerControllerBase::AAbyssPlayerControllerBase()
 	
 }
 
+void AAbyssPlayerControllerBase::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void AAbyssPlayerControllerBase::Tick(const float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (DraggedItem)
+	{
+		FHitResult Hit;
+		if (TraceForward(Hit, ECC_WorldStatic))
+		{
+			FVector Acc = Hit.Location - DraggedItem->GetActorLocation();
+			Acc.Normalize();
+			Acc *= DragAccelerationCoefficient;
+			DraggedItem->ApplyAcceleration(Acc);
+		}
+	}
+}
+
 void AAbyssPlayerControllerBase::ChangeItemDrag(const bool bInDrag)
 {
 	DraggedItem = nullptr;
@@ -44,25 +66,4 @@ bool AAbyssPlayerControllerBase::TraceForward(FHitResult& Hit, ECollisionChannel
 	return found;
 }
 
-void AAbyssPlayerControllerBase::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void AAbyssPlayerControllerBase::Tick(const float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-
-	if (DraggedItem)
-	{
-		FHitResult Hit;
-		if (TraceForward(Hit, ECC_WorldStatic))
-		{
-			FVector Acc = Hit.Location - DraggedItem->GetActorLocation();
-			Acc.Normalize();
-			Acc *= DragAccelerationCoefficient;
-			DraggedItem->ApplyAcceleration(Acc);
-		}
-	}
-}
 

@@ -16,9 +16,9 @@ void AItem::ApplyAcceleration(FVector Acc)
 }
 
 // Called when the game starts or when spawned
-void AItem::BeginPlay()
+void AItem::PostInitializeComponents()
 {
-	Super::BeginPlay();
+	Super::PostInitializeComponents();
 	
 	Body = FindComponentByClass<UPrimitiveComponent>();
 	checkf(Body, TEXT("%s: no PrimitiveComponent on this Item"), *GetName());
