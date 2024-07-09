@@ -34,8 +34,9 @@ void AAbyssPlayerController::SetupInputComponent()
 	ensureMsgf(InputDirectHorizontal, TEXT("AbyssError: InputDirectHorizontal empty on PC: %s."), *GetName());
 	ensureMsgf(InputSideHorizontal, TEXT("AbyssError: InputSideHorizontal empty on PC: %s."), *GetName());
 	ensureMsgf(InputVertical, TEXT("AbyssError: InputVertical empty on PC: %s."), *GetName());
-	ensureMsgf(InputLook, TEXT("AbyssError: InputLook empty on PC: %s."), *GetName());
-	ensureMsgf(InputChangeLookState, TEXT("AbyssError: InputChangeLookState empty on PC: %s."), *GetName());
+	ensureMsgf(InputLookMotion, TEXT("AbyssError: InputLook empty on PC: %s."), *GetName());
+	ensureMsgf(InputTurnChange, TEXT("AbyssError: InputChangeLookState empty on PC: %s."), *GetName());
+	ensureMsgf(InputInteract, TEXT("AbyssError: InputLocationInteract empty on PC: %s."), *GetName());
 	
 	if (InputDirectHorizontal)
 		EIC->BindAction(InputDirectHorizontal, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleDirectMotionInput);
@@ -43,10 +44,12 @@ void AAbyssPlayerController::SetupInputComponent()
 		EIC->BindAction(InputSideHorizontal, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleSideMotionInput);
 	if (InputVertical)
 		EIC->BindAction(InputVertical, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleVerticalMotionInput);
-	if (InputLook)
-		EIC->BindAction(InputLook, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleLookInput);
-	if (InputChangeLookState)
-		EIC->BindAction(InputChangeLookState, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleLookChangeInput);
+	if (InputTurnChange)
+		EIC->BindAction(InputTurnChange, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleTurnChangeInput);
+	if (InputInteract)
+		EIC->BindAction(InputInteract, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleInteractInput);
+	if (InputLookMotion)
+		EIC->BindAction(InputLookMotion, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleLookMotionInput);
 }
 
 void AAbyssPlayerController::OnPossess(APawn* InPawn)
@@ -70,50 +73,26 @@ void AAbyssPlayerController::Tick(const float DeltaSeconds)
 
 	if (DraggedItem)
 	{
-		FHitResult Hit;
-		if (TraceForward(Hit, ECC_WorldStatic))
-		{
-			FVector Acc = Hit.Location - DraggedItem->GetActorLocation();
-			Acc.Normalize();
-			Acc *= DragAccelerationCoefficient;
-			DraggedItem->ApplyAcceleration(Acc);
-		}
+		FVector Acc = DraggedItemTarget - DraggedItem->GetActorLocation();
+		Acc.Normalize();
+		Acc *= DragAccelerationCoefficient;
+		DraggedItem->ApplyAcceleration(Acc);
 	}
 }
 
 
-
-void AAbyssPlayerController::ChangeItemDrag(const bool bInDrag)
+bool AAbyssPlayerController::TraceAtScreenPos(FHitResult& Hit, ECollisionChannel Channel,
+	const FVector2f& ScreenPos) const
 {
-	DraggedItem = nullptr;
-	
-	if (bInDrag)
-	{
-		FHitResult Hit;
-		TraceForward(Hit, ECollisionChannel::ECC_PhysicsBody);
-		DraggedItem = Cast<AItem>(Hit.GetActor());
-	}
-}
-
-bool AAbyssPlayerController::TraceForward(FHitResult& Hit, ECollisionChannel Channel) const
-{
-	FVector StartLocation;
-	FRotator ViewRotation;
-	GetPlayerViewPoint(StartLocation, ViewRotation);
-	const FVector EndLocation = StartLocation + (ViewRotation.Vector() * TraceDistance);
+	FVector Start;
+	FVector Direction;
+	DeprojectScreenPositionToWorld(ScreenPos.X, ScreenPos.Y, Start, Direction);
+	const FVector End = Start + (Direction * TraceDistance);
 
 	FCollisionQueryParams TraceParams;
 	TraceParams.AddIgnoredActor(GetPawn());
 
-	const bool found = GetWorld()->LineTraceSingleByChannel(
-		Hit,
-		StartLocation,
-		EndLocation,
-		Channel,
-		TraceParams
-	);
-	
-	return found;
+	return GetWorld()->LineTraceSingleByChannel(Hit, Start, End, Channel, TraceParams);
 }
 
 void AAbyssPlayerController::HandleDirectMotionInput(const FInputActionValue& Value)
@@ -135,10 +114,8 @@ void AAbyssPlayerController::HandleVerticalMotionInput(const FInputActionValue& 
 		AbyssPawn->MoveUp_Vertical(Value[0]);
 }
 
-void AAbyssPlayerController::HandleLookChangeInput(const FInputActionValue& Value)
+void AAbyssPlayerController::HandleTurnChangeInput(const FInputActionValue& Value)
 {
-	static FVector2f SavedMousePos;
-	
 	bInLook = Value.GetMagnitude() > KINDA_SMALL_NUMBER;
 	SetShowMouseCursor(!bInLook);
 	if (bInLook)
@@ -147,15 +124,42 @@ void AAbyssPlayerController::HandleLookChangeInput(const FInputActionValue& Valu
 		SetMouseLocation(SavedMousePos.X, SavedMousePos.Y);
 }
 
-void AAbyssPlayerController::HandleLookInput(const FInputActionValue& Value)
+void AAbyssPlayerController::HandleInteractInput(const FInputActionValue& Value)
 {
-	if(!bInLook)
-		return;
+	DraggedItem = nullptr;
 	
-	const float dt = GetWorld()->GetDeltaSeconds();
-	AddYawInput(Value[0] * dt * LookRate);
-	AddPitchInput(Value[1] * dt * LookRate);
+	if (!bInLook && Value.GetMagnitude() > KINDA_SMALL_NUMBER)
+	{
+		FVector2f ScreenPos;
+		GetMousePosition(ScreenPos.X, ScreenPos.Y);
+		FHitResult Hit;
+		TraceAtScreenPos(Hit, ECollisionChannel::ECC_PhysicsBody, ScreenPos);
+		DraggedItem = Cast<AItem>(Hit.GetActor());
+	}
 }
 
+void AAbyssPlayerController::HandleLookMotionInput(const FInputActionValue& Value)
+{
+	FVector2f CursorPos;	
+	if(bInLook)
+	{
+		CursorPos = SavedMousePos;
+		const float dt = GetWorld()->GetDeltaSeconds();
+		AddYawInput(Value[0] * dt * LookRate);
+		AddPitchInput(Value[1] * dt * LookRate);	
+	}
+	else
+		GetMousePosition(CursorPos.X, CursorPos.Y);
 
+	//set target location
+	if (DraggedItem)
+	{
+		FHitResult Hit;
+		if (TraceAtScreenPos(Hit, ECC_WorldStatic, CursorPos))
+			DraggedItemTarget = Hit.Location;
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+			FString("Target") + DraggedItemTarget.ToCompactString());
+		
+	}
+}
 

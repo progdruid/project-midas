@@ -31,16 +31,20 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputMappingContext* MappingContext;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputDirectHorizontal;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputSideHorizontal;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputVertical;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
-	UInputAction* InputLook;
+	UInputAction* InputLookMotion;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
-	UInputAction* InputChangeLookState;
+	UInputAction* InputTurnChange;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
+	UInputAction* InputInteract;
 	
 private:
 	UPROPERTY(Transient)
@@ -51,6 +55,8 @@ private:
 	UEnhancedInputComponent* EIC;
 
 	bool bInLook = false;
+	FVector2f SavedMousePos;
+	FVector DraggedItemTarget;
 	
 private:
 	virtual void BeginPlay() override;
@@ -58,17 +64,15 @@ private:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
 	virtual void Tick(float DeltaSeconds) override;
-	
-public:
-	UFUNCTION(BlueprintCallable)
-	void ChangeItemDrag(bool bInDrag);
 
 private:
-	bool TraceForward(FHitResult& Hit, ECollisionChannel Channel) const;
+	bool TraceAtScreenPos(FHitResult& Hit, ECollisionChannel Channel, const FVector2f& ScreenPos) const;
 
 	void HandleDirectMotionInput (const FInputActionValue& Value);
 	void HandleSideMotionInput (const FInputActionValue& Value);
 	void HandleVerticalMotionInput (const FInputActionValue& Value);
-	void HandleLookChangeInput (const FInputActionValue& Value);
-	void HandleLookInput (const FInputActionValue& Value);
+
+	void HandleTurnChangeInput (const FInputActionValue& Value);
+	void HandleInteractInput (const FInputActionValue& Value);
+	void HandleLookMotionInput (const FInputActionValue& Value);
 };
