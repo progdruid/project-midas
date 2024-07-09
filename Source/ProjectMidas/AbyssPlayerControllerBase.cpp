@@ -3,14 +3,50 @@
 
 #include "AbyssPlayerControllerBase.h"
 
-AAbyssPlayerControllerBase::AAbyssPlayerControllerBase()
-{
-	
-}
+#include "Components/InputComponent.h"
+#include "AbyssPawnBase.h"
+#include "Item.h"
 
 void AAbyssPlayerControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (MappingContext)
+	{
+		UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		   GetLocalPlayer()->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+		checkf(Subsystem, TEXT("No UEnhancedInputLocalPlayerSubsystem found."));
+		Subsystem->AddMappingContext(MappingContext, 0);
+	}
+}
+
+void AAbyssPlayerControllerBase::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	EIC = Cast<UEnhancedInputComponent>(InputComponent);
+	checkf(EIC, TEXT("No UEnhancedInputComponent found on the player controller: %s."), *GetName());
+
+	EIC->BindAction(InputDirectHorizontal, ETriggerEvent::Triggered, this, &AAbyssPlayerControllerBase::HandleDirectMotionInput);
+	EIC->BindAction(InputSideHorizontal, ETriggerEvent::Triggered, this, &AAbyssPlayerControllerBase::HandleSideMotionInput);
+	EIC->BindAction(InputVertical, ETriggerEvent::Triggered, this, &AAbyssPlayerControllerBase::HandleVerticalMotionInput);
+	EIC->BindAction(InputLook, ETriggerEvent::Triggered, this, &AAbyssPlayerControllerBase::HandleLookInput);
+}
+
+void AAbyssPlayerControllerBase::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	AbyssPawn = Cast<AAbyssPawnBase>(InPawn);
+	checkf(AbyssPawn, TEXT("The possessed pawn \"%s\" is not a subclass of AAbyssPawnBase."),
+		*InPawn->GetName());
+}
+
+void AAbyssPlayerControllerBase::OnUnPossess()
+{
+	AbyssPawn = nullptr;
+	
+	Super::OnUnPossess();
 }
 
 void AAbyssPlayerControllerBase::Tick(const float DeltaSeconds)
@@ -29,6 +65,8 @@ void AAbyssPlayerControllerBase::Tick(const float DeltaSeconds)
 		}
 	}
 }
+
+
 
 void AAbyssPlayerControllerBase::ChangeItemDrag(const bool bInDrag)
 {
@@ -65,5 +103,32 @@ bool AAbyssPlayerControllerBase::TraceForward(FHitResult& Hit, ECollisionChannel
 	
 	return found;
 }
+
+void AAbyssPlayerControllerBase::HandleDirectMotionInput(const FInputActionValue& Value)
+{
+		
+	if (AbyssPawn)
+		AbyssPawn->MoveForward_Horizontal(Value.Get<float>());
+}
+
+void AAbyssPlayerControllerBase::HandleSideMotionInput(const FInputActionValue& Value)
+{
+	if (AbyssPawn)
+		AbyssPawn->MoveRight_Horizontal(Value[0]);
+}
+
+void AAbyssPlayerControllerBase::HandleVerticalMotionInput(const FInputActionValue& Value)
+{
+	if (AbyssPawn)
+		AbyssPawn->MoveUp_Vertical(Value[0]);
+}
+
+void AAbyssPlayerControllerBase::HandleLookInput(const FInputActionValue& Value)
+{
+	const float dt = GetWorld()->GetDeltaSeconds();
+	AddYawInput(Value[0] * dt * LookRate);
+	AddPitchInput(Value[1] * dt * LookRate);
+}
+
 
 

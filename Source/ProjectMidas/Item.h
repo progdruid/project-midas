@@ -20,6 +20,7 @@ protected:
 	FName Name;
 
 private:
+	UPROPERTY(Transient)
 	UPrimitiveComponent* Body;
 	
 public:
