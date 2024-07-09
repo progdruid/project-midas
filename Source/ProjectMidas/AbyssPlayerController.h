@@ -6,20 +6,20 @@
 #include "GameFramework/PlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
-#include "AbyssPlayerControllerBase.generated.h"
+#include "AbyssPlayerController.generated.h"
 
+class AAbyssPawn;
 class AItem;
-class AAbyssPawnBase;
 /**
  * A player controller for the main abyss map where the whole game takes place
  */
 UCLASS(Abstract)
-class PROJECTMIDAS_API AAbyssPlayerControllerBase : public APlayerController
+class PROJECTMIDAS_API AAbyssPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
 public:
-	AAbyssPlayerControllerBase() = default;
+	AAbyssPlayerController() = default;
 	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
@@ -39,14 +39,18 @@ public:
 	UInputAction* InputVertical;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputLook;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
+	UInputAction* InputChangeLookState;
 	
 private:
 	UPROPERTY(Transient)
 	AItem* DraggedItem;
 	UPROPERTY(Transient)
-	AAbyssPawnBase* AbyssPawn;
+	AAbyssPawn* AbyssPawn;
 	UPROPERTY(Transient)
 	UEnhancedInputComponent* EIC;
+
+	bool bInLook = false;
 	
 private:
 	virtual void BeginPlay() override;
@@ -65,5 +69,6 @@ private:
 	void HandleDirectMotionInput (const FInputActionValue& Value);
 	void HandleSideMotionInput (const FInputActionValue& Value);
 	void HandleVerticalMotionInput (const FInputActionValue& Value);
+	void HandleLookChangeInput (const FInputActionValue& Value);
 	void HandleLookInput (const FInputActionValue& Value);
 };

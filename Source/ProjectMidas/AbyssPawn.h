@@ -4,17 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "AbyssPawnBase.generated.h"
+#include "AbyssPawn.generated.h"
 
 class USphereComponent;
 
 UCLASS(Blueprintable, BlueprintType)
-class PROJECTMIDAS_API AAbyssPawnBase : public APawn
+class PROJECTMIDAS_API AAbyssPawn : public APawn
 {
 	GENERATED_BODY()
 
 public:
-	AAbyssPawnBase();
+	AAbyssPawn();
 	
 protected:
 	virtual UPawnMovementComponent* GetMovementComponent() const override

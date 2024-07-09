@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AbyssPawnBase.h"
+#include "AbyssPawn.h"
 
 #include "Components/SphereComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
 
-AAbyssPawnBase::AAbyssPawnBase()
+AAbyssPawn::AAbyssPawn()
 {
  	PrimaryActorTick.bCanEverTick = false;
 
@@ -28,13 +28,13 @@ AAbyssPawnBase::AAbyssPawnBase()
 	MovementComponent->UpdatedComponent = CollisionComponent;
 }
 
-void AAbyssPawnBase::UpdateNavigationRelevance()
+void AAbyssPawn::UpdateNavigationRelevance()
 {
 	if (CollisionComponent)
 		CollisionComponent->SetCanEverAffectNavigation(bCanAffectNavigationGeneration);
 }
 
-void AAbyssPawnBase::MoveForward_Horizontal(float Val)
+void AAbyssPawn::MoveForward_Horizontal(float Val)
 {
 	if (Val != 0 && Controller)
 	{
@@ -45,7 +45,7 @@ void AAbyssPawnBase::MoveForward_Horizontal(float Val)
 	}
 }
 
-void AAbyssPawnBase::MoveRight_Horizontal(float Val)
+void AAbyssPawn::MoveRight_Horizontal(float Val)
 {
 	if (Val != 0 && Controller)
 	{
@@ -56,7 +56,7 @@ void AAbyssPawnBase::MoveRight_Horizontal(float Val)
 	}
 }
 
-void AAbyssPawnBase::MoveUp_Vertical(float Val)
+void AAbyssPawn::MoveUp_Vertical(float Val)
 {
 	if (Val != 0.f)
 		MovementComponent->AddInputVector(FVector::UpVector * Val);
