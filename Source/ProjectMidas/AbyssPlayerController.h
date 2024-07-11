@@ -10,6 +10,8 @@
 
 class AAbyssPawn;
 class AItem;
+class FReply;
+
 /**
  * A player controller for the main abyss map where the whole game takes place
  */
@@ -51,12 +53,19 @@ private:
 	AItem* DraggedItem;
 	UPROPERTY(Transient)
 	AAbyssPawn* AbyssPawn;
+
 	UPROPERTY(Transient)
 	UEnhancedInputComponent* EIC;
 
+	UPROPERTY(Transient)
+	UGameViewportClient* GameViewportClient;
+	FReply* SlateOperations;
+	TShaderRef<SViewport> ViewportRef;
+	
 	bool bInLook = false;
 	FVector2f SavedMousePos;
 	FVector DraggedItemTarget;
+
 	
 private:
 	virtual void BeginPlay() override;
@@ -68,6 +77,8 @@ private:
 private:
 	bool TraceAtScreenPos(FHitResult& Hit, ECollisionChannel Channel, const FVector2f& ScreenPos) const;
 
+	void ToggleImmersiveMode(bool Value);
+	
 	void HandleDirectMotionInput (const FInputActionValue& Value);
 	void HandleSideMotionInput (const FInputActionValue& Value);
 	void HandleVerticalMotionInput (const FInputActionValue& Value);

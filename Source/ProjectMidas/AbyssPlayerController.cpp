@@ -2,24 +2,42 @@
 
 
 #include "AbyssPlayerController.h"
-
+#include "Widgets/SViewport.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Input/Reply.h"
 #include "Components/InputComponent.h"
 #include "AbyssPawn.h"
-#include "GeometryTypes.h"
 #include "Item.h"
 
 void AAbyssPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (MappingContext)
+	const UWorld* World = GetWorld();
+	ensureMsgf(World, TEXT("AbyssError: No world found."));
+	if (World)
 	{
-		UEnhancedInputLocalPlayerSubsystem* Subsystem =
-		   GetLocalPlayer()->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-		ensureMsgf(Subsystem, TEXT("No UEnhancedInputLocalPlayerSubsystem found."));
-		if (Subsystem)
-			Subsystem->AddMappingContext(MappingContext, 0);
+		GameViewportClient = World->GetGameViewport();
+		ensureMsgf(GameViewportClient, TEXT("AbyssError: No GameViewportClient found."));
 	}
+	
+	ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	ensureMsgf(LocalPlayer, TEXT("AbyssError: No LocalPlayer found."));
+
+	UEnhancedInputLocalPlayerSubsystem* EISubsystem = nullptr;
+	
+	if (LocalPlayer)
+	{
+		SlateOperations = &LocalPlayer->GetSlateOperations();
+		
+		EISubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+		ensureMsgf(EISubsystem, TEXT("No UEnhancedInputLocalPlayerSubsystem found."));
+	}
+
+	if (EISubsystem && MappingContext)
+		EISubsystem->AddMappingContext(MappingContext, 0);
+	
+	ToggleImmersiveMode(false);
 }
 
 void AAbyssPlayerController::SetupInputComponent()
@@ -95,6 +113,27 @@ bool AAbyssPlayerController::TraceAtScreenPos(FHitResult& Hit, ECollisionChannel
 	return GetWorld()->LineTraceSingleByChannel(Hit, Start, End, Channel, TraceParams);
 }
 
+
+void AAbyssPlayerController::ToggleImmersiveMode(bool Value)
+{
+	if (!GameViewportClient || !SlateOperations)
+		return;
+	
+	TSharedPtr<SViewport> ViewportWidget = GameViewportClient->GetGameViewportWidget();
+	if (ViewportWidget.IsValid())
+	{
+		TSharedRef<SViewport> ViewportWidgetRef = ViewportWidget.ToSharedRef();
+		SlateOperations->UseHighPrecisionMouseMovement(ViewportWidgetRef);
+		
+		//SlateOperations->SetUserFocus(ViewportWidgetRef);
+		//SlateOperations->LockMouseToWidget(ViewportWidgetRef);
+		//GameViewportClient->SetMouseLockMode(EMouseLockMode::LockOnCapture);
+		//GameViewportClient->SetIgnoreInput(false);
+		//GameViewportClient->SetMouseCaptureMode(bConsumeCaptureMouseDown ? EMouseCaptureMode::CapturePermanently : EMouseCaptureMode::CapturePermanently_IncludingInitialMouseDown);
+	}
+}
+
+
 void AAbyssPlayerController::HandleDirectMotionInput(const FInputActionValue& Value)
 {
 		
@@ -117,7 +156,10 @@ void AAbyssPlayerController::HandleVerticalMotionInput(const FInputActionValue& 
 void AAbyssPlayerController::HandleTurnChangeInput(const FInputActionValue& Value)
 {
 	bInLook = Value.GetMagnitude() > KINDA_SMALL_NUMBER;
+
 	SetShowMouseCursor(!bInLook);
+	ToggleImmersiveMode(bInLook);
+	
 	if (bInLook)
 		GetMousePosition(SavedMousePos.X, SavedMousePos.Y);
 	else
@@ -157,8 +199,6 @@ void AAbyssPlayerController::HandleLookMotionInput(const FInputActionValue& Valu
 		FHitResult Hit;
 		if (TraceAtScreenPos(Hit, ECC_WorldStatic, CursorPos))
 			DraggedItemTarget = Hit.Location;
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-			FString("Target") + DraggedItemTarget.ToCompactString());
 		
 	}
 }
