@@ -19,9 +19,6 @@ UCLASS(Abstract)
 class PROJECTMIDAS_API AAbyssPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-
-public:
-	AAbyssPlayerController() = default;
 	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
@@ -66,6 +63,10 @@ private:
 	FVector2f SavedMousePos;
 	FVector DraggedItemTarget;
 
+
+	
+public:
+	AAbyssPlayerController() = default;
 	
 private:
 	virtual void BeginPlay() override;

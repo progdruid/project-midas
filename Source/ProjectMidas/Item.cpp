@@ -10,11 +10,6 @@ AItem::AItem()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void AItem::ApplyAcceleration(FVector Acc)
-{
-	Body->AddForce(Acc, NAME_None, true);
-}
-
 // Called when the game starts or when spawned
 void AItem::PostInitializeComponents()
 {
@@ -22,4 +17,9 @@ void AItem::PostInitializeComponents()
 	
 	Body = FindComponentByClass<UPrimitiveComponent>();
 	checkf(Body, TEXT("%s: no PrimitiveComponent on this Item"), *GetName());
+}
+
+void AItem::ApplyAcceleration(FVector Acc)
+{
+	Body->AddForce(Acc, NAME_None, true);
 }

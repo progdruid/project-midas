@@ -12,14 +12,6 @@ UCLASS(Blueprintable, BlueprintType)
 class PROJECTMIDAS_API AAbyssPawn : public APawn
 {
 	GENERATED_BODY()
-
-public:
-	AAbyssPawn();
-	
-protected:
-	virtual UPawnMovementComponent* GetMovementComponent() const override
-		{ return MovementComponent; }
-	virtual void UpdateNavigationRelevance() override;
 	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -30,6 +22,14 @@ protected:
 	TObjectPtr<USphereComponent> CollisionComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UPawnMovementComponent> MovementComponent;
+
+public:
+	AAbyssPawn();
+	
+protected:
+	virtual UPawnMovementComponent* GetMovementComponent() const override
+		{ return MovementComponent; }
+	virtual void UpdateNavigationRelevance() override;
 
 public:
 	UFUNCTION(BlueprintCallable, Category="Pawn")

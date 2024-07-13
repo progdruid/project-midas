@@ -10,10 +10,6 @@ UCLASS()
 class PROJECTMIDAS_API AItem : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	AItem();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item")
@@ -22,11 +18,15 @@ protected:
 private:
 	UPROPERTY(Transient)
 	UPrimitiveComponent* Body;
+
+	
+public:	
+	AItem();
+	
+protected:
+	virtual void PostInitializeComponents() override;
 	
 public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyAcceleration (FVector Acc);
-	
-protected:
-	virtual void PostInitializeComponents() override;
 };
