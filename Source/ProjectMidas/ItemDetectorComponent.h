@@ -7,7 +7,7 @@
 #include "ItemDetectorComponent.generated.h"
 
 class AItem;
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FItemVolumeChangeEvent, AItem*, TriggeredItem);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FItemDetectionEvent, AItem*, TriggeredItem);
 
 /**
  * A volume detector for items 
@@ -17,18 +17,18 @@ UCLASS(Blueprintable,
 	HideCategories=
 		(Replication, ComponentReplication, RayTracing, HLOD, Variable,
 		Navigation, ComponentTick, Rendering, PathTracing, Physics, Collision,
-		Tags, Cooking, Events, Mobile, AssetUserData),
-		ShowCategories=(_))
+		Tags, Cooking, Events, Mobile, AssetUserData, Shape),
+		ShowCategories=(Shape))
 class PROJECTMIDAS_API UItemDetectorComponent : public USphereComponent
 {
 	GENERATED_BODY()
 
 public:
-
+	
 	UPROPERTY(BlueprintAssignable, Category="Events")
-	FItemVolumeChangeEvent OnItemEnterEvent;
+	FItemDetectionEvent OnItemEnterEvent;
 	UPROPERTY(BlueprintAssignable, Category="Events")
-	FItemVolumeChangeEvent OnItemExitEvent;
+	FItemDetectionEvent OnItemExitEvent;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Transient)
