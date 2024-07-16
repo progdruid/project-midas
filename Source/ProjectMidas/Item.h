@@ -19,22 +19,22 @@ private:
 	UPROPERTY(Transient)
 	UPrimitiveComponent* Body;
 
-	UPROPERTY(Transient)
-	TArray<UPrimitiveComponent*> TouchingComponents;
+	// UPROPERTY(Transient)
+	// TArray<UPrimitiveComponent*> TouchingComponents;
 	
 public:	
 	AItem();
 	
 protected:
 	virtual void PostInitializeComponents() override;
-	virtual void Tick(float DeltaSeconds) override;
+	// virtual void Tick(float DeltaSeconds) override;
 	
 public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyAcceleration (FVector Acc);
-	UFUNCTION(BlueprintCallable)
-	bool IsTouchingGround () const;
+	// UFUNCTION(BlueprintCallable)
+	// bool IsTouchingGround () const;
 
-private:
-	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
+// private:
+//  	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 };
