@@ -32,6 +32,8 @@ protected:
 public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyAcceleration (FVector Acc);
+	UFUNCTION(BlueprintCallable)
+	void ToggleGravity(bool Value);
 	// UFUNCTION(BlueprintCallable)
 	// bool IsTouchingGround () const;
 
