@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
 
-UCLASS()
+UCLASS(Abstract, Blueprintable, BlueprintType)
 class PROJECTMIDAS_API AItem : public AActor
 {
 	GENERATED_BODY()
