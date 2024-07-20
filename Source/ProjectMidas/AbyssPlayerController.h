@@ -44,6 +44,10 @@ public:
 	UInputAction* InputTurnChange;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputInteract;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
+	UInputAction* InputConstructionToggle;
+	
 	
 private:
 	UPROPERTY(Transient)
@@ -60,7 +64,8 @@ private:
 	TShaderRef<SViewport> ViewportRef;
 	
 	bool bInLook = false;
-	FVector2f SavedMousePos;
+	bool bInConstructionMode = false;
+	FVector2f SavedInteractionCursorPos;
 	FVector DraggedItemTarget;
 
 
@@ -77,8 +82,10 @@ private:
 
 private:
 	bool TraceAtScreenPos(FHitResult& Hit, ECollisionChannel Channel, const FVector2f& ScreenPos) const;
+	FVector2f GetCurrentInteractionCursorPosition () const;
 
 	void ToggleImmersiveMode(bool Value);
+	void ConstructSelectedCellAtHit (const FHitResult& Hit);
 	
 	void HandleDirectMotionInput (const FInputActionValue& Value);
 	void HandleSideMotionInput (const FInputActionValue& Value);
@@ -87,4 +94,6 @@ private:
 	void HandleTurnChangeInput (const FInputActionValue& Value);
 	void HandleInteractInput (const FInputActionValue& Value);
 	void HandleLookMotionInput (const FInputActionValue& Value);
+
+	void HandleConstructionModeToggle (const FInputActionValue& Value);
 };

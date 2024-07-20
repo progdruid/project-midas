@@ -55,6 +55,7 @@ void AAbyssPlayerController::SetupInputComponent()
 	ensureMsgf(InputLookMotion, TEXT("AbyssError: InputLook empty on PC: %s."), *GetName());
 	ensureMsgf(InputTurnChange, TEXT("AbyssError: InputChangeLookState empty on PC: %s."), *GetName());
 	ensureMsgf(InputInteract, TEXT("AbyssError: InputLocationInteract empty on PC: %s."), *GetName());
+	ensureMsgf(InputConstructionToggle, TEXT("AbyssError: InputConstructionToggle empty on PC: %s."), *GetName());
 	
 	if (InputDirectHorizontal)
 		EIC->BindAction(InputDirectHorizontal, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleDirectMotionInput);
@@ -68,6 +69,9 @@ void AAbyssPlayerController::SetupInputComponent()
 		EIC->BindAction(InputInteract, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleInteractInput);
 	if (InputLookMotion)
 		EIC->BindAction(InputLookMotion, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleLookMotionInput);
+	if (InputConstructionToggle)
+		EIC->BindAction(InputConstructionToggle, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleConstructionModeToggle);
+	
 }
 
 void AAbyssPlayerController::OnPossess(APawn* InPawn)
@@ -113,6 +117,16 @@ bool AAbyssPlayerController::TraceAtScreenPos(FHitResult& Hit, ECollisionChannel
 	return GetWorld()->LineTraceSingleByChannel(Hit, Start, End, Channel, TraceParams);
 }
 
+FVector2f AAbyssPlayerController::GetCurrentInteractionCursorPosition() const
+{
+	if (bInLook)
+		return SavedInteractionCursorPos;
+
+	FVector2f ScreenPos;
+	GetMousePosition(ScreenPos.X, ScreenPos.Y);
+	return ScreenPos;
+}
+
 
 void AAbyssPlayerController::ToggleImmersiveMode(bool Value)
 {
@@ -131,6 +145,12 @@ void AAbyssPlayerController::ToggleImmersiveMode(bool Value)
 		//GameViewportClient->SetIgnoreInput(false);
 		//GameViewportClient->SetMouseCaptureMode(bConsumeCaptureMouseDown ? EMouseCaptureMode::CapturePermanently : EMouseCaptureMode::CapturePermanently_IncludingInitialMouseDown);
 	}
+}
+
+void AAbyssPlayerController::ConstructSelectedCellAtHit(const FHitResult& Hit)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
+		FString("Constructed!"));
 }
 
 
@@ -161,38 +181,45 @@ void AAbyssPlayerController::HandleTurnChangeInput(const FInputActionValue& Valu
 	ToggleImmersiveMode(bInLook);
 	
 	if (bInLook)
-		GetMousePosition(SavedMousePos.X, SavedMousePos.Y);
+		GetMousePosition(SavedInteractionCursorPos.X, SavedInteractionCursorPos.Y);
 	else
-		SetMouseLocation(SavedMousePos.X, SavedMousePos.Y);
+		SetMouseLocation(SavedInteractionCursorPos.X, SavedInteractionCursorPos.Y);
 }
 
 void AAbyssPlayerController::HandleInteractInput(const FInputActionValue& Value)
 {
 	DraggedItem = nullptr;
+
+	if (bInLook || Value.GetMagnitude() < KINDA_SMALL_NUMBER)
+		return;
 	
-	if (!bInLook && Value.GetMagnitude() > KINDA_SMALL_NUMBER)
+	const FVector2f ScreenPos = GetCurrentInteractionCursorPosition();
+
+	if (!bInConstructionMode)
 	{
-		FVector2f ScreenPos;
-		GetMousePosition(ScreenPos.X, ScreenPos.Y);
-		FHitResult Hit;
-		TraceAtScreenPos(Hit, ECollisionChannel::ECC_PhysicsBody, ScreenPos);
-		DraggedItem = Cast<AItem>(Hit.GetActor());
+		FHitResult BodyHit;
+		TraceAtScreenPos(BodyHit, ECollisionChannel::ECC_PhysicsBody, ScreenPos);
+		DraggedItem = Cast<AItem>(BodyHit.GetActor());
+	}
+	else
+	{
+		FHitResult StaticHit;
+		TraceAtScreenPos(StaticHit, ECollisionChannel::ECC_WorldStatic, ScreenPos);
+		ConstructSelectedCellAtHit(StaticHit);
 	}
 }
 
 void AAbyssPlayerController::HandleLookMotionInput(const FInputActionValue& Value)
 {
-	FVector2f CursorPos;	
 	if(bInLook)
 	{
-		CursorPos = SavedMousePos;
 		const float dt = GetWorld()->GetDeltaSeconds();
 		AddYawInput(Value[0] * dt * LookRate);
 		AddPitchInput(Value[1] * dt * LookRate);	
 	}
-	else
-		GetMousePosition(CursorPos.X, CursorPos.Y);
-
+	
+	const FVector2f CursorPos = GetCurrentInteractionCursorPosition();
+	
 	//set target location
 	if (DraggedItem)
 	{
@@ -201,5 +228,13 @@ void AAbyssPlayerController::HandleLookMotionInput(const FInputActionValue& Valu
 			DraggedItemTarget = Hit.Location;
 		
 	}
+}
+
+void AAbyssPlayerController::HandleConstructionModeToggle(const FInputActionValue& Value)
+{
+	bInConstructionMode = !bInConstructionMode;
+
+	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
+		FString("Construction Toggle: ") + FString::FromInt(bInConstructionMode));
 }
 
