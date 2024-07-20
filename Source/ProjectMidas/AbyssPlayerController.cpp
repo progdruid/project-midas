@@ -7,6 +7,7 @@
 #include "Input/Reply.h"
 #include "Components/InputComponent.h"
 #include "AbyssPawn.h"
+#include "DrawDebugHelpers.h"
 #include "Item.h"
 
 void AAbyssPlayerController::BeginPlay()
@@ -149,8 +150,25 @@ void AAbyssPlayerController::ToggleImmersiveMode(bool Value)
 
 void AAbyssPlayerController::ConstructSelectedCellAtHit(const FHitResult& Hit)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
-		FString("Constructed!"));
+	if (!ConstructableCells.Num())
+		return;
+
+	const auto& SelectedCell = ConstructableCells[SelectedConstructionCellIndex];
+	const AActor* DefaultCell = SelectedCell.GetDefaultObject();
+	if (!DefaultCell)
+		return;
+	
+	FVector Location = Hit.Location;
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	AActor* SpawnedActor = GetWorld()->SpawnActor(SelectedCell, &Location, nullptr, Params);
+
+	const FBox Box = SpawnedActor->GetComponentsBoundingBox();
+	Location += Hit.Normal * (Box.GetCenter().Z - Box.Min.Z);
+	SpawnedActor->SetActorLocation(Location);
+	FRotator Rot = Hit.Normal.Rotation();
+	Rot.Pitch += 90;
+	SpawnedActor->SetActorRotation(Rot);
 }
 
 
@@ -205,6 +223,24 @@ void AAbyssPlayerController::HandleInteractInput(const FInputActionValue& Value)
 	{
 		FHitResult StaticHit;
 		TraceAtScreenPos(StaticHit, ECollisionChannel::ECC_WorldStatic, ScreenPos);
+
+		float Radius = 200.0f;
+		FColor Color = FColor::Red;
+		float Duration = 5.0f; // How long the debug shape will persist
+		float Thickness = 2.0f;
+
+		DrawDebugSphere(
+			GetWorld(),
+			StaticHit.Location,
+			Radius,
+			32, // Number of segments
+			Color,
+			false, // Persistent lines
+			Duration,
+			0, // DepthPriority
+			Thickness
+		);
+		
 		ConstructSelectedCellAtHit(StaticHit);
 	}
 }

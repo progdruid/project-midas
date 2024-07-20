@@ -47,7 +47,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputConstructionToggle;
-	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
+	TArray<TSubclassOf<AActor>> ConstructableCells;
 	
 private:
 	UPROPERTY(Transient)
@@ -63,12 +65,14 @@ private:
 	FReply* SlateOperations;
 	TShaderRef<SViewport> ViewportRef;
 	
-	bool bInLook = false;
-	bool bInConstructionMode = false;
 	FVector2f SavedInteractionCursorPos;
+
+	bool bInLook = false;
+
 	FVector DraggedItemTarget;
 
-
+	bool bInConstructionMode = false;
+	int SelectedConstructionCellIndex = 0;
 	
 public:
 	AAbyssPlayerController() = default;
