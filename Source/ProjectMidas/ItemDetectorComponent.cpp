@@ -8,7 +8,7 @@ UItemDetectorComponent::UItemDetectorComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 	
 	//SetVisibleFlag(false);
-	UPrimitiveComponent::SetCollisionProfileName(FName("Trigger"));
+	UPrimitiveComponent::SetCollisionProfileName(FName("TriggerItemsOnly"));
 }
 
 void UItemDetectorComponent::BeginPlay()
