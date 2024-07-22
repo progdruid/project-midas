@@ -31,13 +31,6 @@ class PROJECTMIDAS_API AAbyssPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
-	int TraceDistance;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
-	float DragAccelerationCoefficient;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
-	float LookRate;
-	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputMappingContext* MappingContext;
 
@@ -57,36 +50,48 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputConstructionToggle;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
+	UInputAction* InputCellRotation;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
+	int TraceDistance;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
+	float DragAccelerationCoefficient;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
+	float LookRate;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
+	float RotationSpeed;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
 	TArray<TSubclassOf<ACell>> ConstructableCells;
 	
 private:
-	EInteractionMode CurrentInteractionMode = EInteractionMode::No;
-	
-	UPROPERTY(Transient)
-	AItem* DraggedItem;
-	UPROPERTY(Transient)
-	AAbyssPawn* AbyssPawn;
-
+	//saved stuff
 	UPROPERTY(Transient)
 	UEnhancedInputComponent* EIC;
-
 	UPROPERTY(Transient)
 	UGameViewportClient* GameViewportClient;
 	FReply* SlateOperations;
 	TShaderRef<SViewport> ViewportRef;
-	
-	FVector2f SavedInteractionCursorPos;
 
-	bool bInLook = false;
+	//controlled pawn
+	UPROPERTY(Transient)
+	AAbyssPawn* AbyssPawn;
 
-	FVector DraggedItemTarget;
+	//drag stuff
+	UPROPERTY(Transient)
+	AItem* DraggedItem;
 
-	bool bInConstructionMode = false;
-	int SelectedConstructionCellIndex = 0;
+	//construction stuff
 	UPROPERTY(Transient)
 	ACell* PrototypeCell;
+	int SelectedConstructionCellIndex = 0;
+	float SavedPrototypeRotation = 0.f;
+
+	FHitResult SavedHitResult;
+	FVector2f SavedInteractionCursorPos;
+	bool bInLook = false;
+	EInteractionMode CurrentInteractionMode = EInteractionMode::No;
 	
 public:
 	AAbyssPlayerController() = default;
@@ -105,10 +110,12 @@ private:
 	
 	void ResetCellPrototype ();
 	void PlaceCellPrototypeAtHit(ACell* Cell, const FHitResult& Hit) const;
-	void ConstructCellFromPrototype (ACell*& Prototype);
+	bool ConstructCellFromPrototype(ACell*& Prototype);
 
+	//cell construction
 	void HandleConstructionModeToggle (const FInputActionValue& Value);
-
+	void HandleCellRotation (const FInputActionValue& Value);
+	
 	//mouse & look
 	void HandleInteractInput (const FInputActionValue& Value);
 	void HandleCursorPosChange (const FInputActionValue& Value);

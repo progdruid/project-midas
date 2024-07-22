@@ -58,6 +58,7 @@ void AAbyssPlayerController::SetupInputComponent()
 	ensureMsgf(InputTurnChange, TEXT("AbyssError: InputChangeLookState empty on PC: %s."), *GetName());
 	ensureMsgf(InputInteract, TEXT("AbyssError: InputLocationInteract empty on PC: %s."), *GetName());
 	ensureMsgf(InputConstructionToggle, TEXT("AbyssError: InputConstructionToggle empty on PC: %s."), *GetName());
+	ensureMsgf(InputCellRotation, TEXT("AbyssError: InputCellRotation empty on PC: %s."), *GetName());
 	
 	if (InputDirectHorizontal)
 		EIC->BindAction(InputDirectHorizontal, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleDirectMotionInput);
@@ -73,7 +74,9 @@ void AAbyssPlayerController::SetupInputComponent()
 		EIC->BindAction(InputLookMotion, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleCursorPosChange);
 	if (InputConstructionToggle)
 		EIC->BindAction(InputConstructionToggle, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleConstructionModeToggle);
-	
+	if (InputCellRotation)
+		EIC->BindAction(InputCellRotation, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleCellRotation);
+		
 }
 
 void AAbyssPlayerController::OnPossess(APawn* InPawn)
@@ -97,7 +100,7 @@ void AAbyssPlayerController::Tick(const float DeltaSeconds)
 
 	if (CurrentInteractionMode == EInteractionMode::ItemDrag)
 	{
-		FVector Acc = DraggedItemTarget - DraggedItem->GetActorLocation();
+		FVector Acc = SavedHitResult.Location - DraggedItem->GetActorLocation();
 		Acc.Normalize();
 		Acc *= DragAccelerationCoefficient;
 		DraggedItem->ApplyAcceleration(Acc);
@@ -189,18 +192,20 @@ void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResu
 
 	//const FBox& Box = Cell->GetComponentsBoundingBox();
 	const FVector Location = Hit.Location;// + Hit.Normal * (Box.GetCenter().Z - Box.Min.Z);
-	FRotator Rotation = Hit.Normal.Rotation();
-	Rotation.Pitch -= 90;
-	Cell->SetActorLocationAndRotation(Location, Rotation);
+	const FQuat AlignmentQuat = FRotationMatrix::MakeFromZ(Hit.Normal).ToQuat();
+	const FQuat TurnQuat(FVector::UpVector, FMath::DegreesToRadians(SavedPrototypeRotation));
+	
+	Cell->SetActorLocationAndRotation(Location, AlignmentQuat * TurnQuat);
 }
 
-void AAbyssPlayerController::ConstructCellFromPrototype(ACell*& Prototype)
+bool AAbyssPlayerController::ConstructCellFromPrototype(ACell*& Prototype)
 {
 	if (!Prototype->CanGoBackFromPrototype())
-		return;
+		return false;
 
 	Prototype->ChangeToPrototype(true);
 	Prototype = nullptr;
+	return true;
 }
 
 void AAbyssPlayerController::HandleConstructionModeToggle(const FInputActionValue& Value)
@@ -213,7 +218,14 @@ void AAbyssPlayerController::HandleConstructionModeToggle(const FInputActionValu
 	ResetCellPrototype();
 }
 
-
+void AAbyssPlayerController::HandleCellRotation(const FInputActionValue& Value)
+{
+	if (!PrototypeCell)
+		return;
+	
+	SavedPrototypeRotation += Value.Get<float>() * RotationSpeed * GetWorld()->DeltaTimeSeconds;
+	PlaceCellPrototypeAtHit(PrototypeCell, SavedHitResult);
+}
 
 
 
@@ -227,11 +239,11 @@ void AAbyssPlayerController::HandleInteractInput(const FInputActionValue& Value)
 	if (bInLook)
 		return;
 
-	const bool Pressed = Value.GetMagnitude() > KINDA_SMALL_NUMBER;
+	const bool Pressed = Value.Get<float>() > KINDA_SMALL_NUMBER;
 	
-	if (CurrentInteractionMode == EInteractionMode::Construction && Pressed)
+	if (CurrentInteractionMode == EInteractionMode::Construction && Pressed
+		&& ConstructCellFromPrototype(PrototypeCell))
 	{
-		ConstructCellFromPrototype(PrototypeCell);
 		ResetCellPrototype();
 	}
 	else if (CurrentInteractionMode == EInteractionMode::No && Pressed)
@@ -265,19 +277,16 @@ void AAbyssPlayerController::HandleCursorPosChange(const FInputActionValue& Valu
 	
 	const FVector2f CursorPos = GetCurrentInteractionCursorPosition();
 	
-	FHitResult Hit;
-	if(!TraceAtScreenPos(Hit, ECC_WorldStatic, CursorPos))
+	if(!TraceAtScreenPos(SavedHitResult, ECollisionChannel::ECC_WorldStatic, CursorPos))
 		return;
 	
-	if (CurrentInteractionMode == EInteractionMode::ItemDrag)
-		DraggedItemTarget = Hit.Location;
-	else if (CurrentInteractionMode == EInteractionMode::Construction)
-		PlaceCellPrototypeAtHit(PrototypeCell, Hit);
+	if (CurrentInteractionMode == EInteractionMode::Construction)
+		PlaceCellPrototypeAtHit(PrototypeCell, SavedHitResult);
 }
 
 void AAbyssPlayerController::HandleTurnChangeInput(const FInputActionValue& Value)
 {
-	bInLook = Value.GetMagnitude() > KINDA_SMALL_NUMBER;
+	bInLook = Value.Get<float>() > KINDA_SMALL_NUMBER;
 
 	SetShowMouseCursor(!bInLook);
 	EnableImmersiveMode();
@@ -305,13 +314,13 @@ void AAbyssPlayerController::HandleDirectMotionInput(const FInputActionValue& Va
 void AAbyssPlayerController::HandleSideMotionInput(const FInputActionValue& Value)
 {
 	if (AbyssPawn)
-		AbyssPawn->MoveRight_Horizontal(Value[0]);
+		AbyssPawn->MoveRight_Horizontal(Value.Get<float>());
 }
 
 void AAbyssPlayerController::HandleVerticalMotionInput(const FInputActionValue& Value)
 {
 	if (AbyssPawn)
-		AbyssPawn->MoveUp_Vertical(Value[0]);
+		AbyssPawn->MoveUp_Vertical(Value.Get<float>());
 }
 
 
