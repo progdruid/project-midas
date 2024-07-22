@@ -10,9 +10,9 @@ ACell::ACell()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void ACell::PostInitializeComponents()
+void ACell::BeginPlay()
 {
-	Super::PostInitializeComponents();
+	Super::BeginPlay();
 
 	AccountPrimitives();
 	
@@ -22,19 +22,21 @@ void ACell::PostInitializeComponents()
 
 void ACell::AccountPrimitives()
 {
+	const bool bWasPrototype = bIsPrototype;
+	ChangeToPrototype(true);
+	
 	HitVolume = Cast<UPrimitiveComponent>(GetDefaultSubobjectByName(HitVolumeName));
 	if (HitVolume)
+	{
 		HitVolumeDefaultResponses = HitVolume->GetCollisionResponseToChannels();
+		HitVolumeDefaultCollisionEnabled = HitVolume->GetCollisionEnabled();
+	}
 	
 	//Other primitives
 	TArray<UPrimitiveComponent*> Primitives;
 	GetComponents<UPrimitiveComponent>(Primitives);
 	if (HitVolume)
 		Primitives.Remove(HitVolume);
-	
-	const bool bWasPrototype = bIsPrototype;
-	
-	ChangeToPrototype(true);
 	OtherPrimitivesAndCollision.Reset();
 	for (const auto& Primitive : Primitives)
 		OtherPrimitivesAndCollision.Add(Primitive, Primitive->GetCollisionEnabled());
@@ -60,12 +62,14 @@ void ACell::ChangeToPrototype(const bool bBack)
 	}
 	
 	if (bBack)
+	{
 		HitVolume->SetCollisionResponseToChannels(HitVolumeDefaultResponses);
+		HitVolume->SetCollisionEnabled(HitVolumeDefaultCollisionEnabled);
+	}
 	else
 		HitVolume->SetCollisionProfileName(FName("TriggerNoItems"));
 
 	//change materials
-	
 }
 
 bool ACell::CanGoBackFromPrototype() const

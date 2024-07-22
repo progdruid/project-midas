@@ -15,12 +15,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
 	FName HitVolumeName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
-	bool bSpawnedAsPrototype = true;
+	bool bSpawnedAsPrototype = false;
 	
 private:
 	UPROPERTY(Transient)
 	UPrimitiveComponent* HitVolume;
 	FCollisionResponseContainer HitVolumeDefaultResponses;
+	ECollisionEnabled::Type HitVolumeDefaultCollisionEnabled;
 
 	UPROPERTY(Transient)
 	TMap<UPrimitiveComponent*, TEnumAsByte<ECollisionEnabled::Type>> OtherPrimitivesAndCollision;
@@ -33,7 +34,7 @@ public:
 	ACell();
 
 protected:
-	virtual void PostInitializeComponents() override;
+	virtual void BeginPlay() override;
 
 public:
 	UFUNCTION(BlueprintCallable)
