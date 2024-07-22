@@ -7,6 +7,7 @@
 #include "Input/Reply.h"
 #include "Components/InputComponent.h"
 #include "AbyssPawn.h"
+#include "Cell.h"
 #include "DrawDebugHelpers.h"
 #include "Item.h"
 
@@ -38,7 +39,7 @@ void AAbyssPlayerController::BeginPlay()
 	if (EISubsystem && MappingContext)
 		EISubsystem->AddMappingContext(MappingContext, 0);
 	
-	ToggleImmersiveMode(false);
+	EnableImmersiveMode();
 }
 
 void AAbyssPlayerController::SetupInputComponent()
@@ -69,7 +70,7 @@ void AAbyssPlayerController::SetupInputComponent()
 	if (InputInteract)
 		EIC->BindAction(InputInteract, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleInteractInput);
 	if (InputLookMotion)
-		EIC->BindAction(InputLookMotion, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleLookMotionInput);
+		EIC->BindAction(InputLookMotion, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleCursorPosChange);
 	if (InputConstructionToggle)
 		EIC->BindAction(InputConstructionToggle, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleConstructionModeToggle);
 	
@@ -94,7 +95,7 @@ void AAbyssPlayerController::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (DraggedItem)
+	if (CurrentInteractionMode == EInteractionMode::ItemDrag)
 	{
 		FVector Acc = DraggedItemTarget - DraggedItem->GetActorLocation();
 		Acc.Normalize();
@@ -102,6 +103,9 @@ void AAbyssPlayerController::Tick(const float DeltaSeconds)
 		DraggedItem->ApplyAcceleration(Acc);
 	}
 }
+
+
+
 
 
 bool AAbyssPlayerController::TraceAtScreenPos(FHitResult& Hit, ECollisionChannel Channel,
@@ -129,15 +133,15 @@ FVector2f AAbyssPlayerController::GetCurrentInteractionCursorPosition() const
 }
 
 
-void AAbyssPlayerController::ToggleImmersiveMode(bool Value)
+void AAbyssPlayerController::EnableImmersiveMode()
 {
 	if (!GameViewportClient || !SlateOperations)
 		return;
-	
-	TSharedPtr<SViewport> ViewportWidget = GameViewportClient->GetGameViewportWidget();
+
+	const TSharedPtr<SViewport> ViewportWidget = GameViewportClient->GetGameViewportWidget();
 	if (ViewportWidget.IsValid())
 	{
-		TSharedRef<SViewport> ViewportWidgetRef = ViewportWidget.ToSharedRef();
+		const TSharedRef<SViewport> ViewportWidgetRef = ViewportWidget.ToSharedRef();
 		SlateOperations->UseHighPrecisionMouseMovement(ViewportWidgetRef);
 		
 		//SlateOperations->SetUserFocus(ViewportWidgetRef);
@@ -148,29 +152,144 @@ void AAbyssPlayerController::ToggleImmersiveMode(bool Value)
 	}
 }
 
-void AAbyssPlayerController::ConstructSelectedCellAtHit(const FHitResult& Hit)
+
+
+
+
+
+void AAbyssPlayerController::ResetCellPrototype()
 {
-	if (!ConstructableCells.Num())
+	if ((!PrototypeCell || !PrototypeCell->Destroy()) && PrototypeCell)
 		return;
 
-	const auto& SelectedCell = ConstructableCells[SelectedConstructionCellIndex];
-	const AActor* DefaultCell = SelectedCell.GetDefaultObject();
-	if (!DefaultCell)
+	PrototypeCell = nullptr;	
+
+	if (CurrentInteractionMode != EInteractionMode::Construction)
 		return;
 	
-	FVector Location = Hit.Location;
+	const TSubclassOf<ACell>& SelectedCell = ConstructableCells[SelectedConstructionCellIndex];
+	if (!SelectedCell.GetDefaultObject())
+		return;
+	
 	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	AActor* SpawnedActor = GetWorld()->SpawnActor(SelectedCell, &Location, nullptr, Params);
-
-	const FBox Box = SpawnedActor->GetComponentsBoundingBox();
-	Location += Hit.Normal * (Box.GetCenter().Z - Box.Min.Z);
-	SpawnedActor->SetActorLocation(Location);
-	FRotator Rot = Hit.Normal.Rotation();
-	Rot.Pitch += 90;
-	SpawnedActor->SetActorRotation(Rot);
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.CustomPreSpawnInitalization = [](AActor* Actor)->void
+	{
+		ACell* Cell = CastChecked<ACell>(Actor);
+		Cell->bSpawnedAsPrototype = true;
+	};
+	
+	PrototypeCell = CastChecked<ACell>(GetWorld()->SpawnActor(SelectedCell, nullptr, nullptr, Params));
 }
 
+void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResult& Hit) const
+{
+	if (!Cell)
+		return;
+
+	Cell->SetActorLocation(Hit.Location + Hit.Normal * 50.f);
+}
+
+void AAbyssPlayerController::ConstructCellFromPrototype(ACell*& Prototype)
+{
+	if (!Prototype->CanGoBackFromPrototype())
+		return;
+
+	Prototype->ChangeToPrototype(true);
+	Prototype = nullptr;
+}
+
+void AAbyssPlayerController::HandleConstructionModeToggle(const FInputActionValue& Value)
+{
+	if (CurrentInteractionMode == EInteractionMode::Construction)
+		CurrentInteractionMode = EInteractionMode::No;
+	else
+		CurrentInteractionMode = EInteractionMode::Construction;
+	
+	ResetCellPrototype();
+}
+
+
+
+
+
+
+//mouse & look
+
+void AAbyssPlayerController::HandleInteractInput(const FInputActionValue& Value)
+{
+	EnableImmersiveMode();
+
+	if (bInLook)
+		return;
+
+	const bool Pressed = Value.GetMagnitude() > KINDA_SMALL_NUMBER;
+	
+	if (CurrentInteractionMode == EInteractionMode::Construction && Pressed)
+	{
+		ConstructCellFromPrototype(PrototypeCell);
+		ResetCellPrototype();
+	}
+	else if (CurrentInteractionMode == EInteractionMode::No && Pressed)
+	{
+		FVector2f ScreenPos;
+		GetMousePosition(ScreenPos.X, ScreenPos.Y);
+		FHitResult BodyHit;
+		TraceAtScreenPos(BodyHit, ECollisionChannel::ECC_PhysicsBody, ScreenPos);
+		DraggedItem = Cast<AItem>(BodyHit.GetActor());
+		CurrentInteractionMode = EInteractionMode::ItemDrag;
+	}
+	else if (CurrentInteractionMode == EInteractionMode::ItemDrag && !Pressed)
+	{
+		DraggedItem = nullptr;
+		CurrentInteractionMode = EInteractionMode::No;
+	}
+}
+
+void AAbyssPlayerController::HandleCursorPosChange(const FInputActionValue& Value)
+{
+	if(bInLook)
+	{
+		const float dt = GetWorld()->GetDeltaSeconds();
+		AddYawInput(Value[0] * dt * LookRate);
+		AddPitchInput(Value[1] * dt * LookRate);
+	}
+
+	
+	if (CurrentInteractionMode == EInteractionMode::No)
+		return;
+	
+	const FVector2f CursorPos = GetCurrentInteractionCursorPosition();
+	
+	FHitResult Hit;
+	if(!TraceAtScreenPos(Hit, ECC_WorldStatic, CursorPos))
+		return;
+	
+	if (CurrentInteractionMode == EInteractionMode::ItemDrag)
+		DraggedItemTarget = Hit.Location;
+	else if (CurrentInteractionMode == EInteractionMode::Construction)
+		PlaceCellPrototypeAtHit(PrototypeCell, Hit);
+}
+
+void AAbyssPlayerController::HandleTurnChangeInput(const FInputActionValue& Value)
+{
+	bInLook = Value.GetMagnitude() > KINDA_SMALL_NUMBER;
+
+	SetShowMouseCursor(!bInLook);
+	EnableImmersiveMode();
+	
+	if (bInLook)
+		GetMousePosition(SavedInteractionCursorPos.X, SavedInteractionCursorPos.Y);
+	else
+		SetMouseLocation(SavedInteractionCursorPos.X, SavedInteractionCursorPos.Y);
+}
+
+
+
+
+
+
+//motion
 
 void AAbyssPlayerController::HandleDirectMotionInput(const FInputActionValue& Value)
 {
@@ -191,86 +310,5 @@ void AAbyssPlayerController::HandleVerticalMotionInput(const FInputActionValue& 
 		AbyssPawn->MoveUp_Vertical(Value[0]);
 }
 
-void AAbyssPlayerController::HandleTurnChangeInput(const FInputActionValue& Value)
-{
-	bInLook = Value.GetMagnitude() > KINDA_SMALL_NUMBER;
 
-	SetShowMouseCursor(!bInLook);
-	ToggleImmersiveMode(bInLook);
-	
-	if (bInLook)
-		GetMousePosition(SavedInteractionCursorPos.X, SavedInteractionCursorPos.Y);
-	else
-		SetMouseLocation(SavedInteractionCursorPos.X, SavedInteractionCursorPos.Y);
-}
-
-void AAbyssPlayerController::HandleInteractInput(const FInputActionValue& Value)
-{
-	DraggedItem = nullptr;
-
-	if (bInLook || Value.GetMagnitude() < KINDA_SMALL_NUMBER)
-		return;
-	
-	const FVector2f ScreenPos = GetCurrentInteractionCursorPosition();
-
-	if (!bInConstructionMode)
-	{
-		FHitResult BodyHit;
-		TraceAtScreenPos(BodyHit, ECollisionChannel::ECC_PhysicsBody, ScreenPos);
-		DraggedItem = Cast<AItem>(BodyHit.GetActor());
-	}
-	else
-	{
-		FHitResult StaticHit;
-		TraceAtScreenPos(StaticHit, ECollisionChannel::ECC_WorldStatic, ScreenPos);
-
-		float Radius = 200.0f;
-		FColor Color = FColor::Red;
-		float Duration = 5.0f; // How long the debug shape will persist
-		float Thickness = 2.0f;
-
-		DrawDebugSphere(
-			GetWorld(),
-			StaticHit.Location,
-			Radius,
-			32, // Number of segments
-			Color,
-			false, // Persistent lines
-			Duration,
-			0, // DepthPriority
-			Thickness
-		);
-		
-		ConstructSelectedCellAtHit(StaticHit);
-	}
-}
-
-void AAbyssPlayerController::HandleLookMotionInput(const FInputActionValue& Value)
-{
-	if(bInLook)
-	{
-		const float dt = GetWorld()->GetDeltaSeconds();
-		AddYawInput(Value[0] * dt * LookRate);
-		AddPitchInput(Value[1] * dt * LookRate);	
-	}
-	
-	const FVector2f CursorPos = GetCurrentInteractionCursorPosition();
-	
-	//set target location
-	if (DraggedItem)
-	{
-		FHitResult Hit;
-		if (TraceAtScreenPos(Hit, ECC_WorldStatic, CursorPos))
-			DraggedItemTarget = Hit.Location;
-		
-	}
-}
-
-void AAbyssPlayerController::HandleConstructionModeToggle(const FInputActionValue& Value)
-{
-	bInConstructionMode = !bInConstructionMode;
-
-	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red,
-		FString("Construction Toggle: ") + FString::FromInt(bInConstructionMode));
-}
 

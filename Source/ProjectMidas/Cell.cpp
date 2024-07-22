@@ -78,4 +78,9 @@ bool ACell::CanGoBackFromPrototype() const
 	return  OverlappingActors.Num() == 0;
 }
 
+bool ACell::IsPrototype() const
+{
+	return bIsPrototype;
+}
+
 

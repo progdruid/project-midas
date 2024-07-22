@@ -8,9 +8,19 @@
 #include "EnhancedInputComponent.h"
 #include "AbyssPlayerController.generated.h"
 
+class ACell;
 class AAbyssPawn;
 class AItem;
 class FReply;
+
+
+enum class EInteractionMode
+{
+	No,
+	ItemDrag,
+	Construction
+};
+
 
 /**
  * A player controller for the main abyss map where the whole game takes place
@@ -49,9 +59,11 @@ public:
 	UInputAction* InputConstructionToggle;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
-	TArray<TSubclassOf<AActor>> ConstructableCells;
+	TArray<TSubclassOf<ACell>> ConstructableCells;
 	
 private:
+	EInteractionMode CurrentInteractionMode = EInteractionMode::No;
+	
 	UPROPERTY(Transient)
 	AItem* DraggedItem;
 	UPROPERTY(Transient)
@@ -73,6 +85,8 @@ private:
 
 	bool bInConstructionMode = false;
 	int SelectedConstructionCellIndex = 0;
+	UPROPERTY(Transient)
+	ACell* PrototypeCell;
 	
 public:
 	AAbyssPlayerController() = default;
@@ -87,17 +101,22 @@ private:
 private:
 	bool TraceAtScreenPos(FHitResult& Hit, ECollisionChannel Channel, const FVector2f& ScreenPos) const;
 	FVector2f GetCurrentInteractionCursorPosition () const;
-
-	void ToggleImmersiveMode(bool Value);
-	void ConstructSelectedCellAtHit (const FHitResult& Hit);
+	void EnableImmersiveMode();
 	
+	void ResetCellPrototype ();
+	void PlaceCellPrototypeAtHit(ACell* Cell, const FHitResult& Hit) const;
+	void ConstructCellFromPrototype (ACell*& Prototype);
+
+	void HandleConstructionModeToggle (const FInputActionValue& Value);
+
+	//mouse & look
+	void HandleInteractInput (const FInputActionValue& Value);
+	void HandleCursorPosChange (const FInputActionValue& Value);
+	void HandleTurnChangeInput (const FInputActionValue& Value);
+
+	//motion
 	void HandleDirectMotionInput (const FInputActionValue& Value);
 	void HandleSideMotionInput (const FInputActionValue& Value);
 	void HandleVerticalMotionInput (const FInputActionValue& Value);
 
-	void HandleTurnChangeInput (const FInputActionValue& Value);
-	void HandleInteractInput (const FInputActionValue& Value);
-	void HandleLookMotionInput (const FInputActionValue& Value);
-
-	void HandleConstructionModeToggle (const FInputActionValue& Value);
 };

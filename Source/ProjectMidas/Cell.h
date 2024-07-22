@@ -42,4 +42,7 @@ public:
 	void ChangeToPrototype (bool bBack = false);
 	UFUNCTION(BlueprintCallable)
 	bool CanGoBackFromPrototype() const;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsPrototype() const;
 };
