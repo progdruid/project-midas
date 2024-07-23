@@ -58,6 +58,7 @@ void AAbyssPlayerController::SetupInputComponent()
 	ensureMsgf(InputTurnChange, TEXT("AbyssError: InputChangeLookState empty on PC: %s."), *GetName());
 	ensureMsgf(InputInteract, TEXT("AbyssError: InputLocationInteract empty on PC: %s."), *GetName());
 	ensureMsgf(InputConstructionToggle, TEXT("AbyssError: InputConstructionToggle empty on PC: %s."), *GetName());
+	ensureMsgf(InputSelectedCellChange, TEXT("AbyssError: InputSelectedCellChange empty on PC: %s."), *GetName());
 	ensureMsgf(InputCellRotation, TEXT("AbyssError: InputCellRotation empty on PC: %s."), *GetName());
 	
 	if (InputDirectHorizontal)
@@ -71,11 +72,13 @@ void AAbyssPlayerController::SetupInputComponent()
 	if (InputInteract)
 		EIC->BindAction(InputInteract, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleInteractInput);
 	if (InputLookMotion)
-		EIC->BindAction(InputLookMotion, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleCursorPosChange);
+		EIC->BindAction(InputLookMotion, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleCursorPosChangeInput);
 	if (InputConstructionToggle)
-		EIC->BindAction(InputConstructionToggle, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleConstructionModeToggle);
+		EIC->BindAction(InputConstructionToggle, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleConstructionModeToggleInput);
+	if (InputSelectedCellChange)
+		EIC->BindAction(InputSelectedCellChange, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleSelectedCellChangeInput);
 	if (InputCellRotation)
-		EIC->BindAction(InputCellRotation, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleCellRotation);
+		EIC->BindAction(InputCellRotation, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleCellRotationInput);
 		
 }
 
@@ -98,7 +101,7 @@ void AAbyssPlayerController::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (CurrentInteractionMode == EInteractionMode::ItemDrag)
+	if (CurrentInteractionMode == EInteractionMode::ItemDrag && DraggedItem)
 	{
 		FVector Acc = SavedHitResult.Location - DraggedItem->GetActorLocation();
 		Acc.Normalize();
@@ -158,7 +161,7 @@ void AAbyssPlayerController::EnableImmersiveMode()
 
 
 
-
+//construction implementation
 
 void AAbyssPlayerController::ResetCellPrototype()
 {
@@ -183,6 +186,7 @@ void AAbyssPlayerController::ResetCellPrototype()
 	};
 	
 	PrototypeCell = CastChecked<ACell>(GetWorld()->SpawnActor(SelectedCell, nullptr, nullptr, Params));
+	PlaceCellPrototypeAtHit(PrototypeCell, SavedHitResult);
 }
 
 void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResult& Hit) const
@@ -208,7 +212,14 @@ bool AAbyssPlayerController::ConstructCellFromPrototype(ACell*& Prototype)
 	return true;
 }
 
-void AAbyssPlayerController::HandleConstructionModeToggle(const FInputActionValue& Value)
+
+
+
+
+
+//construction-related handling
+
+void AAbyssPlayerController::HandleConstructionModeToggleInput(const FInputActionValue& Value)
 {
 	if (CurrentInteractionMode == EInteractionMode::Construction)
 		CurrentInteractionMode = EInteractionMode::No;
@@ -218,7 +229,19 @@ void AAbyssPlayerController::HandleConstructionModeToggle(const FInputActionValu
 	ResetCellPrototype();
 }
 
-void AAbyssPlayerController::HandleCellRotation(const FInputActionValue& Value)
+void AAbyssPlayerController::HandleSelectedCellChangeInput(const FInputActionValue& Value)
+{
+	if (CurrentInteractionMode != EInteractionMode::Construction)
+		return;
+	
+	SelectedConstructionCellIndex = (SelectedConstructionCellIndex + 1) % ConstructableCells.Num();
+	ResetCellPrototype();
+
+	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Cyan,
+		FString("You've picked ") + ConstructableCells[SelectedConstructionCellIndex]->GetName());
+}
+
+void AAbyssPlayerController::HandleCellRotationInput(const FInputActionValue& Value)
 {
 	if (!PrototypeCell)
 		return;
@@ -262,7 +285,7 @@ void AAbyssPlayerController::HandleInteractInput(const FInputActionValue& Value)
 	}
 }
 
-void AAbyssPlayerController::HandleCursorPosChange(const FInputActionValue& Value)
+void AAbyssPlayerController::HandleCursorPosChangeInput(const FInputActionValue& Value)
 {
 	if(bInLook)
 	{
@@ -272,8 +295,8 @@ void AAbyssPlayerController::HandleCursorPosChange(const FInputActionValue& Valu
 	}
 
 	
-	if (CurrentInteractionMode == EInteractionMode::No)
-		return;
+	//if (CurrentInteractionMode == EInteractionMode::No)
+	//	return;
 	
 	const FVector2f CursorPos = GetCurrentInteractionCursorPosition();
 	

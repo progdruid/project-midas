@@ -51,6 +51,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputConstructionToggle;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
+	UInputAction* InputSelectedCellChange;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputCellRotation;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
@@ -107,18 +109,20 @@ private:
 	bool TraceAtScreenPos(FHitResult& Hit, ECollisionChannel Channel, const FVector2f& ScreenPos) const;
 	FVector2f GetCurrentInteractionCursorPosition () const;
 	void EnableImmersiveMode();
-	
+
+	//construction implementation
 	void ResetCellPrototype ();
 	void PlaceCellPrototypeAtHit(ACell* Cell, const FHitResult& Hit) const;
 	bool ConstructCellFromPrototype(ACell*& Prototype);
 
-	//cell construction
-	void HandleConstructionModeToggle (const FInputActionValue& Value);
-	void HandleCellRotation (const FInputActionValue& Value);
+	//construction-related handling
+	void HandleConstructionModeToggleInput (const FInputActionValue& Value);
+	void HandleSelectedCellChangeInput (const FInputActionValue& Value);
+	void HandleCellRotationInput (const FInputActionValue& Value);
 	
 	//mouse & look
 	void HandleInteractInput (const FInputActionValue& Value);
-	void HandleCursorPosChange (const FInputActionValue& Value);
+	void HandleCursorPosChangeInput (const FInputActionValue& Value);
 	void HandleTurnChangeInput (const FInputActionValue& Value);
 
 	//motion
