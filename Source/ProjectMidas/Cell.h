@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Cell.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCellEvent);
+
 UCLASS(Abstract, Blueprintable, BlueprintType)
 class PROJECTMIDAS_API ACell : public AActor
 {
@@ -16,6 +18,11 @@ public:
 	FName HitVolumeName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
 	bool bSpawnedAsPrototype = false;
+
+	UPROPERTY(BlueprintAssignable, Category="Events")
+	FCellEvent OnCellStart;
+	UPROPERTY(BlueprintAssignable, Category="Events")
+	FCellEvent OnCellEnd;
 	
 private:
 	UPROPERTY(Transient)

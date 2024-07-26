@@ -51,7 +51,9 @@ void ACell::ChangeToPrototype(const bool bBack)
 		return;
 	
 	bIsPrototype = !bBack;
+	SetActorTickEnabled(bBack);
 
+	//collisions
 	for (const auto& Pair : OtherPrimitivesAndCollision)
 	{
 		ECollisionEnabled::Type CET = ECollisionEnabled::NoCollision;
@@ -70,6 +72,12 @@ void ACell::ChangeToPrototype(const bool bBack)
 		HitVolume->SetCollisionProfileName(FName("TriggerNoItems"));
 
 	//change materials
+
+	//events
+	if (bBack && OnCellStart.IsBound())
+		OnCellStart.Broadcast();
+	else if (!bBack && OnCellEnd.IsBound())
+		OnCellEnd.Broadcast();
 }
 
 bool ACell::CanGoBackFromPrototype() const
