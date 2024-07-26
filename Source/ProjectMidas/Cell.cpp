@@ -18,6 +18,8 @@ void ACell::BeginPlay()
 	
 	if (bSpawnedAsPrototype)
 		ChangeToPrototype();
+	else if (OnCellStart.IsBound())
+		OnCellStart.Broadcast();
 }
 
 void ACell::AccountPrimitives()
