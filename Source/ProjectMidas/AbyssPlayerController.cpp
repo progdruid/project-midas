@@ -207,7 +207,7 @@ bool AAbyssPlayerController::ConstructCellFromPrototype(ACell*& Prototype)
 	if (!Prototype->CanGoBackFromPrototype())
 		return false;
 
-	Prototype->ChangeToPrototype(true);
+	Prototype->ChangeBackToNormal();
 	Prototype = nullptr;
 	return true;
 }

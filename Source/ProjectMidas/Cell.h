@@ -24,11 +24,13 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="Events")
 	FCellEvent OnCellEnd;
 	
+	
 private:
 	UPROPERTY(Transient)
 	UPrimitiveComponent* HitVolume;
-	FCollisionResponseContainer HitVolumeDefaultResponses;
 	ECollisionEnabled::Type HitVolumeDefaultCollisionEnabled;
+	ECollisionChannel HitVolumeDefaultObjectType;
+	FCollisionResponseContainer HitVolumeDefaultResponses;
 
 	UPROPERTY(Transient)
 	TMap<UPrimitiveComponent*, TEnumAsByte<ECollisionEnabled::Type>> OtherPrimitivesAndCollision;
@@ -42,12 +44,14 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
+	
 public:
 	UFUNCTION(BlueprintCallable)
 	void AccountPrimitives();
 	UFUNCTION(BlueprintCallable)
-	void ChangeToPrototype (bool bBack = false);
+	void ChangeToPrototype ();
+	UFUNCTION(BlueprintCallable)
+	void ChangeBackToNormal ();
 	UFUNCTION(BlueprintCallable)
 	bool CanGoBackFromPrototype() const;
 

@@ -41,6 +41,7 @@ void AItem::PostInitializeComponents()
 void AItem::ApplyAcceleration(FVector Acc)
 {
 	Body->AddForce(Acc, NAME_None, true);
+	
 }
 
 void AItem::ToggleGravity(bool Value)

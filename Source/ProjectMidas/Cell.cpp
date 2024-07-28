@@ -15,23 +15,25 @@ void ACell::BeginPlay()
 	Super::BeginPlay();
 
 	AccountPrimitives();
-	
+
 	if (bSpawnedAsPrototype)
 		ChangeToPrototype();
 	else if (OnCellStart.IsBound())
 		OnCellStart.Broadcast();
 }
 
+
 void ACell::AccountPrimitives()
 {
 	const bool bWasPrototype = bIsPrototype;
-	ChangeToPrototype(true);
+	ChangeBackToNormal();
 	
 	HitVolume = Cast<UPrimitiveComponent>(GetDefaultSubobjectByName(HitVolumeName));
 	if (HitVolume)
 	{
-		HitVolumeDefaultResponses = HitVolume->GetCollisionResponseToChannels();
 		HitVolumeDefaultCollisionEnabled = HitVolume->GetCollisionEnabled();
+		HitVolumeDefaultObjectType = HitVolume->GetCollisionObjectType();
+		HitVolumeDefaultResponses = HitVolume->GetCollisionResponseToChannels();
 	}
 	
 	//Other primitives
@@ -47,39 +49,61 @@ void ACell::AccountPrimitives()
 		ChangeToPrototype();
 }
 
-void ACell::ChangeToPrototype(const bool bBack)
+void ACell::ChangeToPrototype()
 {
-	if (bIsPrototype == !bBack || !HitVolume)
+	if (bIsPrototype)
 		return;
 	
-	bIsPrototype = !bBack;
-	SetActorTickEnabled(bBack);
-
-	//collisions
-	for (const auto& Pair : OtherPrimitivesAndCollision)
-	{
-		ECollisionEnabled::Type CET = ECollisionEnabled::NoCollision;
-		if (bBack)
-			CET = Pair.Value;
-
-		Pair.Key->SetCollisionEnabled(CET);
-	}
-	
-	if (bBack)
-	{
-		HitVolume->SetCollisionResponseToChannels(HitVolumeDefaultResponses);
-		HitVolume->SetCollisionEnabled(HitVolumeDefaultCollisionEnabled);
-	}
-	else
-		HitVolume->SetCollisionProfileName(FName("TriggerNoItems"));
-
-	//change materials
 
 	//events
-	if (bBack && OnCellStart.IsBound())
-		OnCellStart.Broadcast();
-	else if (!bBack && OnCellEnd.IsBound())
+	if (OnCellEnd.IsBound())
 		OnCellEnd.Broadcast();
+
+	
+	//actor state
+	bIsPrototype = true;
+	SetActorTickEnabled(false);
+
+	
+	//change collisions
+	for (const auto& Pair : OtherPrimitivesAndCollision)
+		Pair.Key->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (HitVolume)
+		HitVolume->SetCollisionProfileName(FName("TriggerNoItems"));
+
+	
+	//change materials
+	//--------------
+	//
+	//--------------
+}
+
+void ACell::ChangeBackToNormal()
+{
+	if (!bIsPrototype)
+		return;
+	
+	//actor state
+	bIsPrototype = false;
+	SetActorTickEnabled(true);
+
+	
+	//change collisions
+	for (const auto& Pair : OtherPrimitivesAndCollision)
+		Pair.Key->SetCollisionEnabled(Pair.Value);
+
+	if (HitVolume)
+	{
+		HitVolume->SetCollisionEnabled(HitVolumeDefaultCollisionEnabled);
+		HitVolume->SetCollisionObjectType(HitVolumeDefaultObjectType);
+		HitVolume->SetCollisionResponseToChannels(HitVolumeDefaultResponses);
+	}
+
+	
+	//events
+	if (OnCellStart.IsBound())
+		OnCellStart.Broadcast();
 }
 
 bool ACell::CanGoBackFromPrototype() const
