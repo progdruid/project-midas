@@ -33,6 +33,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ApplyAcceleration (FVector Acc);
 	UFUNCTION(BlueprintCallable)
+	void ApplySweep (FVector Sweep, float SpeedLimit);
+	UFUNCTION(BlueprintCallable)
 	void ToggleGravity(bool Value);
 	// UFUNCTION(BlueprintCallable)
 	// bool IsTouchingGround () const;

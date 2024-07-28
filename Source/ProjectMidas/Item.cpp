@@ -41,7 +41,15 @@ void AItem::PostInitializeComponents()
 void AItem::ApplyAcceleration(FVector Acc)
 {
 	Body->AddForce(Acc, NAME_None, true);
-	
+}
+
+void AItem::ApplySweep(FVector Sweep, float SpeedLimit)
+{
+	const float SpeedTowardsSweep = FVector::DotProduct(Sweep.GetSafeNormal(), Body->GetPhysicsLinearVelocity());
+	if (SpeedTowardsSweep < 0)
+		ApplyAcceleration(Sweep * 2);
+	else if (SpeedTowardsSweep < SpeedLimit)
+		ApplyAcceleration(Sweep);
 }
 
 void AItem::ToggleGravity(bool Value)
