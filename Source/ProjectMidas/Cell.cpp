@@ -111,6 +111,9 @@ bool ACell::CanGoBackFromPrototype() const
 	if (!bIsPrototype)
 		return false;
 
+	if (!HitVolume)
+		return true;
+	
 	TArray<AActor*> OverlappingActors;
 	HitVolume->GetOverlappingActors(OverlappingActors);
 	return  OverlappingActors.Num() == 0;
