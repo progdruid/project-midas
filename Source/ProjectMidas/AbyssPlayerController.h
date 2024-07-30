@@ -40,6 +40,9 @@ public:
 	UInputAction* InputSideHorizontal;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputVertical;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
+	UInputAction* InputSpeedBoost;
+	
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Input")
 	UInputAction* InputLookMotion;
@@ -90,7 +93,6 @@ private:
 	int SelectedConstructionCellIndex = 0;
 	float SavedPrototypeRotation = 0.f;
 
-	FHitResult SavedHitResult;
 	FVector2f SavedInteractionCursorPos;
 	bool bInLook = false;
 	EInteractionMode CurrentInteractionMode = EInteractionMode::No;
@@ -126,6 +128,7 @@ private:
 	void HandleTurnChangeInput (const FInputActionValue& Value);
 
 	//motion
+	void HandleSpeedBoostInput (const FInputActionValue& Value);
 	void HandleDirectMotionInput (const FInputActionValue& Value);
 	void HandleSideMotionInput (const FInputActionValue& Value);
 	void HandleVerticalMotionInput (const FInputActionValue& Value);

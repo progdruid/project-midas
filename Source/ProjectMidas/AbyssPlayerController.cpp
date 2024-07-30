@@ -54,6 +54,7 @@ void AAbyssPlayerController::SetupInputComponent()
 	ensureMsgf(InputDirectHorizontal, TEXT("AbyssError: InputDirectHorizontal empty on PC: %s."), *GetName());
 	ensureMsgf(InputSideHorizontal, TEXT("AbyssError: InputSideHorizontal empty on PC: %s."), *GetName());
 	ensureMsgf(InputVertical, TEXT("AbyssError: InputVertical empty on PC: %s."), *GetName());
+	ensureMsgf(InputSpeedBoost, TEXT("AbyssError: InputSpeedBoost empty on PC: %s."), *GetName());
 	ensureMsgf(InputLookMotion, TEXT("AbyssError: InputLook empty on PC: %s."), *GetName());
 	ensureMsgf(InputTurnChange, TEXT("AbyssError: InputChangeLookState empty on PC: %s."), *GetName());
 	ensureMsgf(InputInteract, TEXT("AbyssError: InputLocationInteract empty on PC: %s."), *GetName());
@@ -67,6 +68,8 @@ void AAbyssPlayerController::SetupInputComponent()
 		EIC->BindAction(InputSideHorizontal, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleSideMotionInput);
 	if (InputVertical)
 		EIC->BindAction(InputVertical, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleVerticalMotionInput);
+	if (InputSpeedBoost)
+		EIC->BindAction(InputSpeedBoost, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleSpeedBoostInput);
 	if (InputTurnChange)
 		EIC->BindAction(InputTurnChange, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleTurnChangeInput);
 	if (InputInteract)
@@ -101,13 +104,20 @@ void AAbyssPlayerController::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	const FVector2f CursorPos = GetCurrentInteractionCursorPosition();
+	FHitResult Hit;
+	if(!TraceAtScreenPos(Hit, ECollisionChannel::ECC_WorldStatic, CursorPos))
+		return;
+	
 	if (CurrentInteractionMode == EInteractionMode::ItemDrag && DraggedItem)
 	{
-		FVector Acc = SavedHitResult.Location - DraggedItem->GetActorLocation();
+		FVector Acc = Hit.Location - DraggedItem->GetActorLocation();
 		Acc.Normalize();
 		Acc *= DragAccelerationCoefficient;
 		DraggedItem->ApplyAcceleration(Acc);
 	}
+	else if (CurrentInteractionMode == EInteractionMode::Construction)
+		PlaceCellPrototypeAtHit(PrototypeCell, Hit);
 }
 
 
@@ -186,7 +196,6 @@ void AAbyssPlayerController::ResetCellPrototype()
 	};
 	
 	PrototypeCell = CastChecked<ACell>(GetWorld()->SpawnActor(SelectedCell, nullptr, nullptr, Params));
-	PlaceCellPrototypeAtHit(PrototypeCell, SavedHitResult);
 }
 
 void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResult& Hit) const
@@ -247,7 +256,6 @@ void AAbyssPlayerController::HandleCellRotationInput(const FInputActionValue& Va
 		return;
 	
 	SavedPrototypeRotation += Value.Get<float>() * RotationSpeed * GetWorld()->DeltaTimeSeconds;
-	PlaceCellPrototypeAtHit(PrototypeCell, SavedHitResult);
 }
 
 
@@ -293,18 +301,6 @@ void AAbyssPlayerController::HandleCursorPosChangeInput(const FInputActionValue&
 		AddYawInput(Value[0] * dt * LookRate);
 		AddPitchInput(Value[1] * dt * LookRate);
 	}
-
-	
-	//if (CurrentInteractionMode == EInteractionMode::No)
-	//	return;
-	
-	const FVector2f CursorPos = GetCurrentInteractionCursorPosition();
-	
-	if(!TraceAtScreenPos(SavedHitResult, ECollisionChannel::ECC_WorldStatic, CursorPos))
-		return;
-	
-	if (CurrentInteractionMode == EInteractionMode::Construction)
-		PlaceCellPrototypeAtHit(PrototypeCell, SavedHitResult);
 }
 
 void AAbyssPlayerController::HandleTurnChangeInput(const FInputActionValue& Value)
@@ -322,10 +318,13 @@ void AAbyssPlayerController::HandleTurnChangeInput(const FInputActionValue& Valu
 
 
 
-
-
-
 //motion
+void AAbyssPlayerController::HandleSpeedBoostInput(const FInputActionValue& Value)
+{
+	const bool bBoosted = Value.Get<float>() > KINDA_SMALL_NUMBER;
+	if (AbyssPawn)
+		AbyssPawn->ToggleBoostedSpeed(bBoosted);
+}
 
 void AAbyssPlayerController::HandleDirectMotionInput(const FInputActionValue& Value)
 {
