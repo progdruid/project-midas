@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "AbyssPlayerController.generated.h"
 
+class AAbyssPlayerState;
 class ACell;
 class AAbyssPawn;
 class AItem;
@@ -69,20 +70,25 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
 	TArray<TSubclassOf<ACell>> ConstructableCells;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Default")
+	UDataTable* CellDataTable;
 	
 private:
 	//saved stuff
 	UPROPERTY(Transient)
 	UEnhancedInputComponent* EIC;
+
 	UPROPERTY(Transient)
 	UGameViewportClient* GameViewportClient;
 	FReply* SlateOperations;
 	TShaderRef<SViewport> ViewportRef;
-
-	//controlled pawn
+	
+	UPROPERTY(Transient)
+	AAbyssPlayerState* AbyssPlayerState;
 	UPROPERTY(Transient)
 	AAbyssPawn* AbyssPawn;
 
+	
 	//drag stuff
 	UPROPERTY(Transient)
 	AItem* DraggedItem;

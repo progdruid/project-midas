@@ -7,6 +7,7 @@
 #include "Input/Reply.h"
 #include "Components/InputComponent.h"
 #include "AbyssPawn.h"
+#include "AbyssPlayerState.h"
 #include "Cell.h"
 #include "DrawDebugHelpers.h"
 #include "Item.h"
@@ -82,7 +83,9 @@ void AAbyssPlayerController::SetupInputComponent()
 		EIC->BindAction(InputSelectedCellChange, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleSelectedCellChangeInput);
 	if (InputCellRotation)
 		EIC->BindAction(InputCellRotation, ETriggerEvent::Triggered, this, &AAbyssPlayerController::HandleCellRotationInput);
-		
+
+	AbyssPlayerState = GetPlayerState<AAbyssPlayerState>();
+	ensureMsgf(AbyssPlayerState, TEXT("AbyssError: No AAbyssPlayerState on the player controller."));
 }
 
 void AAbyssPlayerController::OnPossess(APawn* InPawn)
@@ -214,6 +217,18 @@ void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResu
 bool AAbyssPlayerController::ConstructCellFromPrototype(ACell*& Prototype)
 {
 	if (!Prototype->CanGoBackFromPrototype())
+		return false;
+
+	float Cost = 0.f;
+	if (CellDataTable)
+	{
+		const FString ContextString;
+		const FCellData* Data = CellDataTable->FindRow<FCellData>(Prototype->Name, ContextString);
+		if (Data)
+			Cost = Data->BuildingCost;
+	}
+
+	if (AbyssPlayerState && Cost > KINDA_SMALL_NUMBER && !AbyssPlayerState->TryWithdrawMoney(Cost))
 		return false;
 
 	Prototype->ChangeBackToNormal();

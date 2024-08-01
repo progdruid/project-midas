@@ -7,14 +7,9 @@ AAbyssPlayerState::AAbyssPlayerState()
 {
 }
 
-void AAbyssPlayerState::WithdrawMoney(float Amount)
+float AAbyssPlayerState::GetCurrentMoney() const
 {
-	MoneyAmount -= Amount;
-}
-
-void AAbyssPlayerState::DepositMoney(float Amount)
-{
-	MoneyAmount += Amount;
+	return MoneyAmount;
 }
 
 bool AAbyssPlayerState::HasAmountMoney(float Amount) const
@@ -22,8 +17,31 @@ bool AAbyssPlayerState::HasAmountMoney(float Amount) const
 	return MoneyAmount > Amount;
 }
 
-float AAbyssPlayerState::GetCurrentMoney() const
+void AAbyssPlayerState::WithdrawMoney(float Amount)
 {
-	return MoneyAmount;
+	MoneyAmount -= Amount;
+	PrintMoney();
+}
+
+bool AAbyssPlayerState::TryWithdrawMoney(float Amount)
+{
+	if (!HasAmountMoney(Amount))
+		return false;
+	
+	WithdrawMoney(Amount);
+	return true;
+}
+
+void AAbyssPlayerState::DepositMoney(float Amount)
+{
+	MoneyAmount += Amount;
+	PrintMoney();
+}
+
+void AAbyssPlayerState::PrintMoney() const
+{
+	GEngine->RemoveOnScreenDebugMessage(1001);
+	GEngine->AddOnScreenDebugMessage(1001, 10.f, FColor::Green,
+		FString("Current money: ") + FString::SanitizeFloat(MoneyAmount), false);
 }
 

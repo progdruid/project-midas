@@ -110,7 +110,7 @@ bool ACell::CanGoBackFromPrototype() const
 {
 	if (!bIsPrototype)
 		return false;
-
+	
 	if (!HitVolume)
 		return true;
 	

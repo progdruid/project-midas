@@ -15,6 +15,9 @@ class PROJECTMIDAS_API ACell : public AActor
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
+	FName Name;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
 	FName HitVolumeName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
 	bool bSpawnedAsPrototype = false;
@@ -57,4 +60,16 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool IsPrototype() const;
+};
+
+USTRUCT(BlueprintType)
+struct FCellData : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float BuildingCost;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float OperationCost;
+	
 };
