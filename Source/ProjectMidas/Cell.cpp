@@ -39,8 +39,16 @@ void ACell::AccountPrimitives()
 	//Other primitives
 	TArray<UPrimitiveComponent*> Primitives;
 	GetComponents<UPrimitiveComponent>(Primitives);
+	
 	if (HitVolume)
 		Primitives.Remove(HitVolume);
+	for (const FName& IntactVolumeName : IntactVolumeNames)
+	{
+		UPrimitiveComponent* IntactVolume = Cast<UPrimitiveComponent>(GetDefaultSubobjectByName(IntactVolumeName));
+		if (IntactVolume)
+			Primitives.Remove(IntactVolume);
+	}
+
 	OtherPrimitivesAndCollision.Reset();
 	for (const auto& Primitive : Primitives)
 		OtherPrimitivesAndCollision.Add(Primitive, Primitive->GetCollisionEnabled());
@@ -122,6 +130,11 @@ bool ACell::CanGoBackFromPrototype() const
 bool ACell::IsPrototype() const
 {
 	return bIsPrototype;
+}
+
+bool ACell::AreRequirementsMet_Implementation()
+{
+	return true;
 }
 
 

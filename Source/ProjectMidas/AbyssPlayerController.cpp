@@ -216,7 +216,7 @@ void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResu
 
 bool AAbyssPlayerController::ConstructCellFromPrototype(ACell*& Prototype)
 {
-	if (!Prototype->CanGoBackFromPrototype())
+	if (!Prototype->CanGoBackFromPrototype() || !Prototype->AreRequirementsMet())
 		return false;
 
 	float Cost = 0.f;

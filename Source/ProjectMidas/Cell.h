@@ -20,6 +20,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
 	FName HitVolumeName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
+	TArray<FName> IntactVolumeNames;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
 	bool bSpawnedAsPrototype = false;
 
 	UPROPERTY(BlueprintAssignable, Category="Events")
@@ -60,6 +63,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool IsPrototype() const;
+	UFUNCTION(BlueprintNativeEvent)
+	bool AreRequirementsMet ();
 };
 
 USTRUCT(BlueprintType)
