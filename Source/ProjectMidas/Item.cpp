@@ -48,7 +48,7 @@ void AItem::ApplySweep(FVector Sweep, float SpeedLimit)
 	const float SpeedTowardsSweep = FVector::DotProduct(Sweep.GetSafeNormal(), Body->GetPhysicsLinearVelocity());
 	if (SpeedTowardsSweep < 0)
 		ApplyAcceleration(Sweep * 2);
-	else if (SpeedTowardsSweep < SpeedLimit)
+	else if (SpeedTowardsSweep < SpeedLimit || SpeedLimit < KINDA_SMALL_NUMBER)
 		ApplyAcceleration(Sweep);
 }
 
