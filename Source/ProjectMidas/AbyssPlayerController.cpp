@@ -186,7 +186,7 @@ void AAbyssPlayerController::ResetCellPrototype()
 	if (CurrentInteractionMode != EInteractionMode::Construction)
 		return;
 	
-	const TSubclassOf<ACell>& SelectedCell = ConstructableCells[SelectedConstructionCellIndex];
+	const TSubclassOf<ACell>& SelectedCell = ConstructableCells[ConstructedCellIndex];
 	if (!SelectedCell.GetDefaultObject())
 		return;
 	
@@ -257,12 +257,12 @@ void AAbyssPlayerController::HandleSelectedCellChangeInput(const FInputActionVal
 {
 	if (CurrentInteractionMode != EInteractionMode::Construction)
 		return;
-	
-	SelectedConstructionCellIndex = (SelectedConstructionCellIndex + 1) % ConstructableCells.Num();
-	ResetCellPrototype();
 
-	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Cyan,
-		FString("You've picked ") + ConstructableCells[SelectedConstructionCellIndex]->GetName());
+	const float FloatValue = Value.Get<float>();
+	const int Step = (FloatValue > 0.f) - (FloatValue < 0.f);
+	const int NumCells = ConstructableCells.Num();
+	ConstructedCellIndex = ((ConstructedCellIndex + Step) % NumCells + NumCells) % NumCells;
+	ResetCellPrototype();
 }
 
 void AAbyssPlayerController::HandleCellRotationInput(const FInputActionValue& Value)

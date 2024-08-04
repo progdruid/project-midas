@@ -96,7 +96,7 @@ private:
 	//construction stuff
 	UPROPERTY(Transient)
 	ACell* PrototypeCell;
-	int SelectedConstructionCellIndex = 0;
+	int ConstructedCellIndex = 0;
 	float SavedPrototypeRotation = 0.f;
 
 	FVector2f SavedInteractionCursorPos;
