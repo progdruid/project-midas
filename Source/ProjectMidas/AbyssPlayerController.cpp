@@ -206,12 +206,12 @@ void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResu
 	if (!Cell)
 		return;
 
-	//const FBox& Box = Cell->GetComponentsBoundingBox();
-	const FVector Location = Hit.Location;// + Hit.Normal * (Box.GetCenter().Z - Box.Min.Z);
-	const FQuat AlignmentQuat = FRotationMatrix::MakeFromZ(Hit.Normal).ToQuat();
-	const FQuat TurnQuat(FVector::UpVector, FMath::DegreesToRadians(SavedPrototypeRotation));
+	const FVector Location = Hit.Location;
+	FQuat RotationQuat(FVector::UpVector, FMath::DegreesToRadians(SavedPrototypeRotation));
+	if (Cell->bSurfaceRelativePlacement)
+		RotationQuat *= FRotationMatrix::MakeFromZ(Hit.Normal).ToQuat();
 	
-	Cell->SetActorLocationAndRotation(Location, AlignmentQuat * TurnQuat);
+	Cell->SetActorLocationAndRotation(Location, RotationQuat);
 }
 
 bool AAbyssPlayerController::ConstructCellFromPrototype(ACell*& Prototype)
