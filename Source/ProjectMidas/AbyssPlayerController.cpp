@@ -207,9 +207,13 @@ void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResu
 		return;
 
 	const FVector Location = Hit.Location;
-	FQuat RotationQuat(FVector::UpVector, FMath::DegreesToRadians(SavedPrototypeRotation));
+	const FQuat TurnQuat(FVector::UpVector, FMath::DegreesToRadians(SavedPrototypeRotation));
+	
+	FQuat RotationQuat;
 	if (Cell->bSurfaceRelativePlacement)
-		RotationQuat *= FRotationMatrix::MakeFromZ(Hit.Normal).ToQuat();
+		RotationQuat = FRotationMatrix::MakeFromZ(Hit.Normal).ToQuat() * TurnQuat;
+	else
+		RotationQuat = TurnQuat;
 	
 	Cell->SetActorLocationAndRotation(Location, RotationQuat);
 }
