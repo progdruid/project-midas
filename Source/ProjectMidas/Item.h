@@ -19,15 +19,11 @@ private:
 	UPROPERTY(Transient)
 	UPrimitiveComponent* Body;
 
-	// UPROPERTY(Transient)
-	// TArray<UPrimitiveComponent*> TouchingComponents;
-	
 public:	
 	AItem();
 	
 protected:
 	virtual void PostInitializeComponents() override;
-	// virtual void Tick(float DeltaSeconds) override;
 	
 public:
 	UFUNCTION(BlueprintCallable)
@@ -36,11 +32,11 @@ public:
 	void ApplySweep (FVector Sweep, float SpeedLimit);
 	UFUNCTION(BlueprintCallable)
 	void ToggleGravity(bool Value);
-	// UFUNCTION(BlueprintCallable)
-	// bool IsTouchingGround () const;
-
-// private:
-//  	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
+	UFUNCTION(BlueprintCallable)
+	void SetVelocity(FVector Vel);
+	UFUNCTION(BlueprintCallable)
+	void AddVelocity(FVector Vel);
+	virtual FVector GetVelocity() const override;
 };
 
 USTRUCT(BlueprintType)
