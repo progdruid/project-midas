@@ -98,6 +98,7 @@ private:
 	ACell* PrototypeCell;
 	int ConstructedCellIndex = 0;
 	float SavedPrototypeRotation = 0.f;
+	bool bInvertRotation = false;
 
 	FVector2f SavedInteractionCursorPos;
 	bool bInLook = false;

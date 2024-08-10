@@ -111,6 +111,8 @@ void AAbyssPlayerController::Tick(const float DeltaSeconds)
 	FHitResult Hit;
 	if(!TraceAtScreenPos(Hit, ECollisionChannel::ECC_WorldStatic, CursorPos))
 		return;
+
+	bInvertRotation = (Hit.Normal | FVector(1.f, 1.f, -1.f)) <= 0;
 	
 	if (CurrentInteractionMode == EInteractionMode::ItemDrag && DraggedItem)
 	{
@@ -206,8 +208,12 @@ void AAbyssPlayerController::PlaceCellPrototypeAtHit(ACell* Cell, const FHitResu
 	if (!Cell)
 		return;
 
+	float RotAngle = SavedPrototypeRotation;
+	if (Cell->bSurfaceRelativePlacement && bInvertRotation)
+		RotAngle += (90.f - SavedPrototypeRotation) * 2.f;
+	
 	const FVector Location = Hit.Location;
-	const FQuat TurnQuat(FVector::UpVector, FMath::DegreesToRadians(SavedPrototypeRotation));
+	const FQuat TurnQuat(FVector::UpVector, FMath::DegreesToRadians(RotAngle));
 	
 	FQuat RotationQuat;
 	if (Cell->bSurfaceRelativePlacement)
@@ -271,10 +277,13 @@ void AAbyssPlayerController::HandleSelectedCellChangeInput(const FInputActionVal
 
 void AAbyssPlayerController::HandleCellRotationInput(const FInputActionValue& Value)
 {
-	if (!PrototypeCell)
+	if (CurrentInteractionMode != EInteractionMode::Construction)
 		return;
-	
-	SavedPrototypeRotation += Value.Get<float>() * RotationSpeed * GetWorld()->DeltaTimeSeconds;
+
+	float Direction = Value.Get<float>();
+	if (bInvertRotation)
+		Direction *= -1.f;
+	SavedPrototypeRotation += Direction * RotationSpeed * GetWorld()->DeltaTimeSeconds;
 }
 
 
