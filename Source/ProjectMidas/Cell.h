@@ -26,6 +26,8 @@ public:
 	bool bSpawnedAsPrototype = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
 	bool bSurfaceRelativePlacement = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
+	bool bIndestructible = false;
 	
 	UPROPERTY(BlueprintAssignable, Category="Events")
 	FCellEvent OnCellStart;
