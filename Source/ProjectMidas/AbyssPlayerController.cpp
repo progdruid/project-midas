@@ -112,7 +112,7 @@ void AAbyssPlayerController::Tick(const float DeltaSeconds)
 	if(!TraceAtScreenPos(Hit, ECollisionChannel::ECC_WorldStatic, CursorPos))
 		return;
 
-	bInvertRotation = (Hit.Normal | FVector(1.f, 1.f, -1.f)) <= 0;
+	bInvertRotation = (Hit.Normal | FVector::OneVector) < 0;
 	
 	if (CurrentInteractionMode == EInteractionMode::ItemDrag && DraggedItem)
 	{

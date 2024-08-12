@@ -6,8 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "Cell.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCellEvent);
-
 UCLASS(Abstract, Blueprintable, BlueprintType)
 class PROJECTMIDAS_API ACell : public AActor
 {
@@ -28,12 +26,11 @@ public:
 	bool bSurfaceRelativePlacement = true;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
 	bool bIndestructible = false;
-	
-	UPROPERTY(BlueprintAssignable, Category="Events")
-	FCellEvent OnCellStart;
-	UPROPERTY(BlueprintAssignable, Category="Events")
-	FCellEvent OnCellEnd;
-	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
+	bool bTickWhileCell = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Cell")
+	bool bTickWhilePrototype = false;
 	
 private:
 	UPROPERTY(Transient)
@@ -48,12 +45,16 @@ private:
 	
 	bool bIsPrototype = false;
 	
-	
 public:	
 	ACell();
 
 protected:
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void CellStart ();
+	UFUNCTION(BlueprintImplementableEvent)
+	void CellEnd ();
 	
 public:
 	UFUNCTION(BlueprintCallable)

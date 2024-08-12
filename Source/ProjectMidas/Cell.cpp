@@ -3,25 +3,29 @@
 
 #include "Cell.h"
 
+#include "Kismet/KismetSystemLibrary.h"
+
 // Sets default values
 ACell::ACell()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = bTickWhileCell || bTickWhilePrototype;
 }
 
 void ACell::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	AccountPrimitives();
 
 	if (bSpawnedAsPrototype)
+	{
 		ChangeToPrototype();
-	else if (OnCellStart.IsBound())
-		OnCellStart.Broadcast();
-}
+		return;
+	}
 
+	SetActorTickEnabled(bTickWhileCell);
+	CellStart();
+}
 
 void ACell::AccountPrimitives()
 {
@@ -64,13 +68,12 @@ void ACell::ChangeToPrototype()
 	
 
 	//events
-	if (OnCellEnd.IsBound())
-		OnCellEnd.Broadcast();
+	CellEnd();
 
 	
 	//actor state
 	bIsPrototype = true;
-	SetActorTickEnabled(false);
+	SetActorTickEnabled(bTickWhilePrototype);
 
 	
 	//change collisions
@@ -94,7 +97,7 @@ void ACell::ChangeBackToNormal()
 	
 	//actor state
 	bIsPrototype = false;
-	SetActorTickEnabled(true);
+	SetActorTickEnabled(bTickWhileCell);
 
 	
 	//change collisions
@@ -110,8 +113,7 @@ void ACell::ChangeBackToNormal()
 
 	
 	//events
-	if (OnCellStart.IsBound())
-		OnCellStart.Broadcast();
+	CellStart();
 }
 
 bool ACell::CanGoBackFromPrototype() const
